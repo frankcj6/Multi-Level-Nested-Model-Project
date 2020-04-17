@@ -34,7 +34,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # getwd()
 
 dat <- read.csv(
-  "classroom.csv",
+  "data/classroom.csv",
   header = TRUE
 )
 
