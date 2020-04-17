@@ -1,0 +1,237 @@
+---
+title: "2042 Multi-Level Modeling: Nested (Spring 2020)"
+subtitle: "Group Project Part 1"
+author: "Group 1"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Instructions 
+
+- We will use the `classroom.csv` data for this project.
+
+  a. `math1st` will be the outcome of interest for this first part.
+  
+      - Recall that `math1st` = `mathkind` + `mathgain`
+    
+  b. Read in the data (R: store as `dat`)
+  
+  c. Fit all models using **REML** (not the default in R)
+  
+  d. It's best if you use `lmerTest::lmer` rather than `lme4::lmer` to call the MLM function. The former provides *p*-values for fixed effects in the summary.
+  
+  e. There are 2 common error messages one can get from lmer calls: failed to converge (problem with hessian: negative eigenvalue; max|grad| = ...); and singularity. They may both be problematic in a real problem, but the latter suggests that a variance component is on the boundary of the parameter space. 
+    
+      - In your discussion/writeup, consider the latter to be a "convergence problem" and ignore the former. 
+    
+```{r import}
+# Load -------------------------------------------------------------------------
+# setwd()
+# getwd()
+
+dat <- read.csv(
+  "classroom.csv",
+  header = TRUE
+)
+
+# Create a variable and named as math1st
+dat$math1st <- dat$mathkind + dat$mathgain
+```
+    
+## Question 1 of 12
+
+Estimate an Unconditional Means Model (UMM) with random intercepts for **both** schools and classrooms (nested in schools). 
+
+  a. Report the ICC for schools and the ICC for classrooms. 
+  
+  b. **Write out this model** using your preferred notation, but use the same choice of notation for the remainder of your project. 
+  
+      - Be mindful and explicit about any assumptions made. 
+
+### Solution
+
+```{r question-1}
+
+```
+
+## Question 2 of 12
+
+Add **all** school level predictors.
+
+  a. Report if adding the predictors **as a block** is justified.
+  
+  b. Report change in $\sigma_\zeta^2$.
+  
+### Solution
+
+```{r question-2}
+
+```
+
+## Question 3 of 12
+
+Add **all** classroom level predictors.
+
+  a. Report if adding the predictors **as a block** is justified.
+  
+  b. Report change in $\sigma_\eta^2$ and change in $\sigma_\epsilon^2$.
+  
+  c. Give a potential reason as to why $\sigma_\epsilon^2$ is reduced, but not $\sigma_\eta^2$?
+  
+### Solution
+
+```{r question-3}
+
+```
+
+## Question 4 of 12
+
+Add (nearly) **all** student level predictors (but not `mathgain` or `mathkind`, as these are outomes in this context).
+
+  a. Report if justified statistically **as a block** of predictors.
+  
+  b. Report change in variance components for all levels.
+  
+  c. Give a potential reason as to why the school level variance component drops from prior model.
+  
+  d. **Write out this model** using your chosen notation.
+  
+### Soltuion
+
+```{r question-4}
+
+```
+
+## Question 5 of 12
+
+a. Try to add a random slope for each **teacher level** predictor (varying at the **school level**; one by one separately - not all together).
+
+b. Report the model fit or lack of fit.
+
+c. Why is it a bad idea to include a random slope on the `housepov` effect?
+
+d. Retry the above, allowing the slopes to be correlated with the random intercepts (still one by one).
+
+e. Report anything unusual about the variance components (changes that are in a direction you didn't expect) and any potential explanation for why those changes occurred (*hint: what did you add to the model?*).
+
+### Solution
+
+```{r question-5}
+
+```
+
+## Question 6 of 12
+
+a. Try to add a random slope for each **student level** predictor (varying at the **classroom level**; one by one separately - not all together).
+
+b. Why is it a bad idea to include a classroom-level variable with random slopes at the classroom level?
+
+c. Retry the above, allowing the slopes to be correlated with the random intercepts. Report findings.
+
+### Solution
+
+```{r question-6}
+
+```
+
+## Question 7 of 12
+
+a. Try to add a random slope for each **student level** predictor (varying at the **school level**; one by one separately - not all together). 
+
+b. Retry the above, allowing the slopes to be correlated with the random intercepts.
+
+c. Report anything unusual about the variance components (changes that are unexpected).
+
+### Solution
+
+```{r question-7}
+
+```
+
+## Question 8 of 12
+
+a. Take the two predictors that had significant (at $0.05$ level) random slopes, in the forms in which they worked (independent or correlated) and add both to the model, and test for need of one conditional on needing the other.
+
+b. Is the more complex model (with both random slopes in it) justified?
+
+c. **Write out this model** in your preferred notation.
+
+### Solution
+
+```{r question-8}
+
+```
+
+## Question 9 of 12
+
+a. For UMM, write down: `V_S`, `V_C`, `V_E` for the three variance components (simply the estimates).
+
+b. For the most complicated (all fixed effects) random **intercepts only** model, what are: `V_S`, `V_C`, `V_E`?
+
+c. By what fraction did these each decrease with the new predictors in the model?
+
+### Solution
+
+```{r question-9}
+
+```
+
+## Question 10 of 12
+
+Now consider the model with a rancom slope in `ses`.
+
+  a. What are: `V_C`, `V_S` (`ses` = 0), `V_E`?
+  
+      - We need to list `ses = 0` here, or we don't know how to use the slope variance.
+      
+  b. What are: `V_S` (`ses` = -0.50), `V_S` (`ses` = +0.50)?
+  
+### Solution
+
+```{r question-10}
+
+```
+
+## Question 11 of 12
+
+Now consider the model with a random slope in `minority`.
+
+  a. What are: `V_C`, `V_S` (`minority` = 0), `V_E`?
+  
+      - We need to list `minority` = 0 here, or we don't know how to use the slope variance.
+      
+  b. What are: `V_S` (`minority` = +0.25),`V_S` (`minority` = +0.50),`V_S` (`minority` = +0.75)?
+
+### Solution
+
+```{r question-11}
+
+```
+
+## Question 12 of 12
+
+Now consider the model with a rancom slope in `ses` and `minority`.
+
+  a. What are: `V_C`, `V_S` (`minority` = 0, `ses` = 0), `V_E`? 
+  
+      - We need to list `minority` = 0 and `ses` = 0 here, or we don't know how to use the slope variance.
+      
+  b. In the last model, what is a "likely" (+/- 1 s.d.) range for $\eta_{0jk}$.
+  
+  c. Can we make a similar statement about $\zeta_{0k}$?
+  
+  d. If you had a large value for $\eta_{0jk}$, would you expect a large or small or "any" value for the two random slope terms, $\zeta_{1k}$ and $\zeta_{2k}$ for `ses` and `minority`?
+  
+  e. If you had a large value for $\zeta_{0jk}$, would you expect a large or small or "any" value for the two random slope terms, $\zeta_{1k}$ and $\zeta_{2k}$ for `ses` and `minority` (discuss each separately)?
+
+
+
+
+
+
+
+
