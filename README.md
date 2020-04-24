@@ -12,3 +12,8 @@ Yuyue Hua
 Seeun Jang
 
 [Tong Jin](https://github.com/tong-jin-nyu)
+
+
+### Meeting Schedule
+
+May 1, 2020 after class
