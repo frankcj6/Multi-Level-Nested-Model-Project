@@ -29,6 +29,8 @@ knitr::opts_chunk$set(echo = TRUE)
       - In your discussion/writeup, consider the latter to be a "convergence problem" and ignore the former. 
     
 ```{r import}
+library(lme4)
+library(lmerTest)
 # Load -------------------------------------------------------------------------
 # setwd()
 # getwd()
@@ -55,8 +57,18 @@ Estimate an Unconditional Means Model (UMM) with random intercepts for **both** 
 ### Solution
 
 ```{r question-1}
-
+unconditional_model<-lmer(math1st~(1|schoolid/classid),data=dat)
+print(summary(unconditional_model))
+ICC_class<-280.69/(280.69+1146.79)
+ICC_school<- 85.47/(85.47+1146.79)
 ```
+a)
+$ICC_{school}=\frac{\sigma^2_\zeta}{\sigma^2_\zeta+\sigma^2_\epsilon}=\frac{85.47}{85.47+1146.79}=0.069$, $ICC_{class}=\frac{\sigma^2_\zeta}{\sigma^2_\zeta+\sigma^2_\epsilon}=\frac{280.69}{280.69+1146.79}=0.197$
+
+b)
+The unconditional model fitting on math1st with random intercepts for schoolid and classid is $$MATH1ST_{ijk}=b_0 + \eta_{jk}+\zeta_{k}+\epsilon_{ijk}$$, where $$\eta_{jk} \sim N(0, \sigma^2_\eta)$$, $$\zeta_k \sim N(0,\zeta^2_\zeta)$$, independently of each other and $$\epsilon_{ijk}\sim N(0,\sigma^2_\epsilon)$$, j represents classrooms and k represents schools.
+
+
 
 ## Question 2 of 12
 
@@ -69,8 +81,15 @@ Add **all** school level predictors.
 ### Solution
 
 ```{r question-2}
-
+model_all_school<-lmer(math1st~housepov+(1|schoolid)+(1|classid),data=dat) 
+print(summary(model_all_school))
+anova(model_all_school,unconditional_model,refit=F)
 ```
+a)
+The p-value of adding housepov variable to the model is $3.39\times e^{-5}$, which is less than 0.05, therefore, adding the housepov is significant to the model. Also, the p-value for the coeffcient on the housepov variable is 0.0017, which also justified the significance of adding this variable. 
+
+b)
+After adding the all school-level variable(housepov), the $\sigma^2_\zeta$ dropped from 280.69 to 250.93.
 
 ## Question 3 of 12
 
