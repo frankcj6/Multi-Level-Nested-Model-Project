@@ -7,7 +7,7 @@
 
 [Lisa Song](https://github.com/lsong16)
 
-Yuyue Hua
+[Yuyue Hua](https://github.com/hyy892559232)
 
 Seeun Jang
 
