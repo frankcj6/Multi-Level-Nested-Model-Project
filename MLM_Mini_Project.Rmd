@@ -1,5 +1,6 @@
 ---
-title: "MLM Mini Project"
+title: "2042 MLM Mini Project (Spring 2020)"
+subtitle: "Group 1"
 date:  "`r format(Sys.time(), '%B %d %Y')`"
 output:
   pdf_document: default
@@ -9,8 +10,8 @@ output:
 knitr::opts_chunk$set(echo = TRUE, tidy = TRUE)
 ```
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
-###Load libraries
+```{r dependencies, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+# Dependencies -----------------------------------------------------------------
 if(!requireNamespace("here"))
   install.packages("here", repos = "https://cloud.r-project.org")
 require("here")
@@ -24,14 +25,14 @@ if(!requireNamespace("lmerTest"))
 require("lmerTest")
 ```
 
-## Team Members and division of work: 
+## Team members and division of work
 
 ```{r}
 # Insert code to set.seed
 ```
 
+### Question 1
 
-### Question 1:
 You will generate simulated data for a single school with 100 classrooms, each of which has 200 students. 
 
   a. Outcome for student $i$ in classroom $j$: $Y_{ij}$.
@@ -48,7 +49,7 @@ You will generate simulated data for a single school with 100 classrooms, each o
   
   g. The outcome has the following form (DGP, given the modeling parameters above):
 $$Y_{ij} = 0 + 1X_{ij} + \eta_j + \varepsilon_{ij} ; \mbox{     } \eta_j \sim N(0,\sigma^2_{\eta}), \varepsilon_{ij} \sim N(0, \sigma^2_{\varepsilon}), indep. $$
-h. Generate a single simulated dataset (you will need a "classid" variable to track classrooms); you can optionally assign a "studentid")
+  h. Generate a single simulated dataset (you will need a "classid" variable to track classrooms); you can optionally assign a "studentid")
   i. **Important:** construct classid such that classrooms appear consecutively within the dataframe. As per: `rep(1:J,each=n_j)`
   
   
