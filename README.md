@@ -9,7 +9,7 @@
 
 [Yuyue Hua](https://github.com/hyy892559232)
 
-Seeun Jang
+[Seeun Jang](https://github.com/sj9175)
 
 [Tong Jin](https://github.com/tong-jin-nyu)
 
