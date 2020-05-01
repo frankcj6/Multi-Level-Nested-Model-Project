@@ -40,6 +40,10 @@ Refit the model in Part 1 that has all fixed effects as well as random intercept
 
 ```{r}
 # Insert code to fit model and print summary 
+dat<-read.csv("./data/classroom.csv")
+dat$math1st=dat$mathkind+dat$mathgain
+fit1<-lmerTest::lmer(math1st ~ housepov + yearstea + mathprep + mathknow + ses + sex + minority +(1 | schoolid/classid), data = dat,REML=T)
+summary(fit1)
 ```
 
 a. Construct the residual that removes only the 'fixed effects' then subtract it from the outcome; call this residual resFE
@@ -47,13 +51,23 @@ a. Construct the residual that removes only the 'fixed effects' then subtract it
     ii. R hint 2: If you decide to add a column to your data frame with resFE, note that predict only generates predictions for cases uses in the model *after listwise deletion.* 
 
 ```{r}
-# Insert code here to construct residual 
+math1st.pred<-predict(fit1,re.form=~0)
+dat$resFE[!is.na(dat$mathknow)]<-dat$math1st[!is.na(dat$mathknow)]- math1st.pred
+
+#Check with lm function
+# lm2<-lm(math1st ~ housepov + yearstea + mathprep + mathknow + ses + sex + minority , data = dat)
+#lm.predct<-predict(lm2)
+
 ```
 
 ## Question 2 
 Show that the residual is not indepedent within schools in some manner. 
 ```{r}
 # Insert code to show that the residual, resFE, is not indepedent within schools
+
+#stacked boxplot
+require(ggplot2)
+ggplot(dat[!is.na(dat$resFE),], aes(x = reorder(schoolid, resFE, FUN = median), y = resFE)) +geom_boxplot()
 ```
 
 ## Question 3
@@ -63,12 +77,17 @@ Show that the residual is not indepedent within schools in some manner.
     
 ```{r}
 # Insert code to construct the residual 
+dat$resFE_RE[!is.na(dat$mathknow)]<-residuals(fit1)
+
 ```
 
 ## Question 4
 ### a. Show that these new residuals, resFE_RE are MUCH LESS (if not completely un-) correlated within schools, using the same method as before (boxplot?) **(you should comment)** 
 ```{r}
 # Insert code to show that new residuals, resFE_RE, is much less correlated within schools
+
+#stacked boxplot
+ggplot(dat[!is.na(dat$resFE_RE),], aes(x = reorder(schoolid, resFE_RE, FUN = median), y = resFE_RE)) +geom_boxplot()
 ```
 
     Response: 
@@ -77,12 +96,29 @@ Show that the residual is not indepedent within schools in some manner.
 ### a. Generate the two sets of BLUPs (for random effects zeta0 and eta0)
 ```{r}
 # Insert code to generate the two sets of BLUPS (zeta0 and eta0)
+ranefs <- lme4::ranef(fit1)
+zeta0 <- ranefs$schoolid[, 1]
+eta0 <- ranefs$classid[, 1]
+
 ```
 
 ### b. Examine these for normality (include evidence), **and comment**.
 ```{r}
 # Insert code to examine BLUPs for normality
-# par(mfrow=c(1,2)) produces palette for one row of plots with two columns 
+# par(mfrow=c(1,2)) produces palette for one row of plots with two columns
+
+#Create density plot
+par(mfrow=c(1,2))
+plot(density(zeta0),main="Density of zeta0")
+plot(density(eta0),main="Density of eta0")
+
+#QQplot
+par(mfrow=c(1,2))
+qqnorm(zeta0,main="QQ-Plot of zeta0")
+qqline(zeta0)
+qqnorm(eta0,main="QQ-Plot of eta0")
+qqline(eta0)
+
 ```
 
     Response: 
@@ -91,11 +127,14 @@ Show that the residual is not indepedent within schools in some manner.
 ### a. Fit a slightly more complicated model with the same fixed effects, but now add a random slope for minority, correlated with the random intercept, at the school level (keep the classroom level random intercept).
 ```{r}
 # Insert code to fit the slightly more complicated model and print the summary
+fit2<-lmerTest::lmer(math1st ~ housepov + yearstea + mathprep + mathknow + ses + sex + minority +(minority|schoolid)+(minority||classid), data = dat,REML=T)
+
 ```
 
 ### b. Construct the residual (individual, level 1) and the BLUPs for the remaining random effects. Call the new residual resFE_RE as before.
 ```{r}
 # Insert code to construct residual and BLUPs 
+
 ```
 
 ### c. Examine all error estimates (individual level residuals, BLUPs (school and classroom level) for normality **(and comment)**). 
