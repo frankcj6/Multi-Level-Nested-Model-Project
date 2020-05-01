@@ -104,8 +104,19 @@ Add **all** classroom level predictors.
 ### Solution
 
 ```{r question-3}
-
+library(car)
+model_all_class<-lmer(math1st~yearstea+mathknow+mathprep+housepov+(1|schoolid)+(1|classid),data=dat) 
+print(summary(model_all_class))
+linearHypothesis(model_all_class,c('yearstea','mathknow','mathprep'))
 ```
+a)
+Based the wald test, we can conclude that the p-value for adding classroom-level variable is 0.3233, which is not significant at the level of 0.05. 
+
+b)
+The $\sigma_\eta^2$ increased from 82.36 to 94.36, while the $\sigma_\epsilon^2$ dropped from 1146.96 to 1136.43.
+
+c)
+The residuals of the model are decreased because some of the variance are explained by adding classroom-level variable.However, to the classroom-level effect, some added variable might not be significant or there might exists some correlation between the added classroom-level variables. 
 
 ## Question 4 of 12
 
@@ -122,8 +133,22 @@ Add (nearly) **all** student level predictors (but not `mathgain` or `mathkind`,
 ### Soltuion
 
 ```{r question-4}
-
+model_all_student<-lmer(math1st~sex+minority+ses+yearstea+mathknow+mathprep+housepov+(1|schoolid)+(1|classid),data=dat)
+print(summary(model_all_student))
+anova(model_all_class,model_all_student, refit=F)
+linearHypothesis(model_all_student,c('sex','minority','ses'))
 ```
+a)
+Based on the wald test, we can conclude that the p-value for adding the student-level predictors(sex,minority,ses) is $2.2\times e^{-16}$. This implies that adding the student-level predictors to the model is significant at the 0.05 level.
+
+b)
+Comparing to the previous model before adding the student-level predictors, the $\sigma_\eta^2$ dropped from 94.36 to 93.89, the $\sigma_\epsilon^2$ dropped from 1136.43 to 1064.96 and the $\sigma^2_\zeta$ dropped from 223.31 to 169.45. 
+
+c)
+The school level variance dropped might due to adding the individual-level predictors that may be associated with group (school) effects in the aggregate.Thus, adding the individual-level predictors caused the decrease in the school level variance. 
+
+d)
+The model after adding the student-level predcitors is $$MATH1ST_{ijk}= b_0 +b_1SES_{ijk}+b_2SEX_{ijk}+b_3MINORITY_{ijk}+b_4YEARSTEA_{jk}+b_5MATHKNOW_{jk}+b_6MATHPREP_{jk}+b_7HOUSEPOV_{k}+\eta_{jk}+\zeta_{k}+\epsilon_{ijk}$$, where $$\eta_{jk} \sim N(0, \sigma^2_\eta)$$, $$\zeta_k \sim N(0,\zeta^2_\zeta)$$, independently of each other and $$\epsilon_{ijk}\sim N(0,\sigma^2_\epsilon)$$, j represents classrooms and k represents schools.
 
 ## Question 5 of 12
 
@@ -138,10 +163,51 @@ d. Retry the above, allowing the slopes to be correlated with the random interce
 e. Report anything unusual about the variance components (changes that are in a direction you didn't expect) and any potential explanation for why those changes occurred (*hint: what did you add to the model?*).
 
 ### Solution
-
-```{r question-5}
-
+a)
+```{r question-5a}
+#mathknow
+model_mathknow<- lmer(math1st~sex+minority+ses+yearstea+mathknow+mathprep+housepov+(0+mathknow|schoolid)+(1|schoolid)+(1|classid),data=dat)
+print(summary(model_mathknow))
+anova(model_mathknow,model_all_student,refit=F)
+#mathprep
+model_mathprep<- lmer(math1st~sex+minority+ses+yearstea+mathknow+mathprep+housepov+(0+mathprep|schoolid)+(1|schoolid)+(1|classid),data=dat)
+print(summary(model_mathprep))
+anova(model_mathprep,model_all_student,refit=F)
+#yearstea
+model_yearstea<- lmer(math1st~sex+minority+ses+yearstea+mathknow+mathprep+housepov+(0+yearstea|schoolid)+(1|schoolid)+(1|classid),data=dat)
+print(summary(model_yearstea))
+anova(model_yearstea,model_all_student,refit=F)
 ```
+
+b)
+According to the LRT test conducted above, we can conclude that the p-value for adding random slope for teacher level variable mathknow, mathprep and yearstea are 1, 1, and 0.934. This implies that there is no siginicance variation for adding those random slopes. Thus, the model for adding all three variables does not fit.
+
+c)
+Because housepov are school-level variable, thus it only varies at the school level. Including housepov as a random slope on school level only create an redundant school-level random effects.
+
+d)
+```{r,question-5d}
+#mathknow
+model_mathknow_cor<- lmer(math1st~sex+minority+ses+yearstea+mathknow+mathprep+housepov+(mathknow|schoolid)+(1|classid),data=dat)
+print(summary(model_mathknow_cor))
+anova(model_mathknow_cor,model_all_student,refit=F)
+#mathprep
+model_mathprep_cor<- lmer(math1st~sex+minority+ses+yearstea+mathknow+mathprep+housepov+(mathprep|schoolid)+(1|classid),data=dat)
+print(summary(model_mathprep_cor))
+anova(model_mathprep_cor,model_all_student,refit=F)
+#yearstea
+model_yearstea_cor<- lmer(math1st~sex+minority+ses+yearstea+mathknow+mathprep+housepov+(yearstea|schoolid)+(1|classid),data=dat)
+print(summary(model_yearstea_cor))
+anova(model_yearstea_cor,model_all_student,refit=F)
+```
+
+e)
+There are a couple things I noticed interesting after allowing for correlation between random slopes and intercepts. 
+For MATHKNOW, the variance component seems not to have a huge influence on the variance component as the variance for class-level effect and residual only slightly varies.
+
+For Mathprep, the class-level variance dropped by 20. However, the school-level intercept variance is around 500, which is a significant large increase. This might due to the correlation added to the model between mathprep random slope and school-level intercept.
+
+For Yearstea, the class-level effect variance dropped from 90 to around 40. This variance are explained by the school-level random intercept that are added to the model. Also, the random slope on teacher-level variance are close to 0.54, which are around 0. This might due to the added yeastea that aggregate to have an effect and influence on the variation between school-level. 
 
 ## Question 6 of 12
 
@@ -153,9 +219,44 @@ c. Retry the above, allowing the slopes to be correlated with the random interce
 
 ### Solution
 
-```{r question-6}
-
+a)
+```{r question-6a}
+#ses
+model_ses<- lmer(math1st~sex+minority+ses+yearstea+mathknow+mathprep+housepov+(1|schoolid)+(ses||classid),data=dat)
+print(summary(model_ses))
+anova(model_all_student, model_ses,refit=F)
+#sex
+model_sex<-lmer(math1st~sex+minority+ses+yearstea+mathknow+mathprep+housepov+(1|schoolid)+(sex||classid),data=dat)
+print(summary(model_sex))
+anova(model_all_student,model_sex,refit=F)
+#minority
+model_minority<-lmer(math1st~sex+minority+ses+yearstea+mathknow+mathprep+housepov+(1|schoolid)+(minority||classid),data=dat)
+print(summary(model_minority))
+anova(model_all_student,model_sex,refit=F)
 ```
+
+b)
+Including classroom-level variable with random slopes at the classroom-level will lead to the same effect for each group, which is each classroom. Thus, adding a random slope for the same level does not show the relationship between the outcome variable on different group. 
+
+c)
+```{r,question-6c}
+#ses with correlation
+model_ses_cor<- lmer(math1st~ses+minority+sex+yearstea+mathknow+mathprep+housepov+(1|schoolid)+(ses|classid),data=dat,REML = F)
+print(summary(model_ses_cor))
+anova(model_all_student,model_ses_cor)
+#sex with correlation
+model_sex_cor<-lmer(math1st~sex+minority+ses+yearstea+mathknow+mathprep+housepov+(1|schoolid)+(sex|classid),data=dat)
+print(summary(model_sex_cor))
+anova(model_all_student,model_sex_cor,refit=F)
+#minority with correlation
+model_minority_cor<-lmer(math1st~sex+minority+ses+yearstea+mathknow+mathprep+housepov+(1|schoolid)+(minority|classid),data=dat)
+print(summary(model_minority_cor))
+anova(model_all_student,model_minority_cor,refit=F)
+```
+For allowing correlation on SES variable, the classroom-level variance dropped by 10 and the interaction effect variance between student-level variable SES and classroom-level are around 41. The p-value are 0.14 for comparing the new model with all predictors model. 
+For allowing correlation on SEX variable, the classroom-level variance increased by 40 and intereaction effect variance between student-level variable Sex and classroom-level are around 31. The p-value are 0.7875 implies that it might not be a good fit to allow correlation on Sex variable with random slope.
+
+For allowing correlation on Minority variable, the classroom-level variance significantly increased from 94 to 225, while the interaction effect variance between student-level variable minority and classroom-level are around 171 with a correlatio of -0.82. The p-value are 0.208. This significant increase might due to the aggregate effect of student-level predictors minority on the classroom-level effect. 
 
 ## Question 7 of 12
 
@@ -167,9 +268,40 @@ c. Report anything unusual about the variance components (changes that are unexp
 
 ### Solution
 
-```{r question-7}
-
+a)
+```{r question-7a}
+#ses varying at school-level
+model_ses_school<-lmer(math1st~sex+minority+ses+yearstea+mathknow+mathprep+housepov+(ses||schoolid)+(1|classid),data=dat)
+print(summary(model_ses_school))
+anova(model_all_student,model_ses_school,refit=F)
+#sex varying at school-level
+model_sex_school<-lmer(math1st~sex+minority+ses+yearstea+mathknow+mathprep+housepov+(sex||schoolid)+(1|classid),data=dat)
+print(summary(model_ses_school))
+anova(model_all_student,model_sex_school,refit=F)
+#minority varying at school-level
+model_minority_school<-lmer(math1st~sex+minority+ses+yearstea+mathknow+mathprep+housepov+(minority||schoolid)+(1|classid),data=dat)
+print(summary(model_minority_school))
+anova(model_all_student,model_minority_school,refit=F)
 ```
+
+b)
+```{r,question-7b}
+#ses varying at school-level
+model_ses_school_cor<-lmer(math1st~sex+minority+ses+yearstea+mathknow+mathprep+housepov+(ses|schoolid)+(1|classid),data=dat)
+print(summary(model_ses_school_cor))
+anova(model_all_student,model_ses_school_cor,refit=F)
+#sex varying at school-level
+model_sex_school_cor<-lmer(math1st~sex+minority+ses+yearstea+mathknow+mathprep+housepov+(sex|schoolid)+(1|classid),data=dat)
+print(summary(model_ses_school_cor))
+anova(model_all_student,model_sex_school_cor,refit=F)
+#minority varying at school-level
+model_minority_school_cor<-lmer(math1st~sex+minority+ses+yearstea+mathknow+mathprep+housepov+(minority|schoolid)+(1|classid),data=dat)
+print(summary(model_minority_school_cor))
+anova(model_all_student,model_minority_school_cor,refit=F)
+```
+
+c)
+One thing that is unusual is the fact that when allowing correlation for between minority(varing at school level) random effect, the variance of school-level random intercept and minority random slope has a significant increase of 381 and 343. This might due to the high negative correlation between the random intercept and the random slope which is -0.83.
 
 ## Question 8 of 12
 
@@ -181,9 +313,23 @@ c. **Write out this model** in your preferred notation.
 
 ### Solution
 
-```{r question-8}
-
+a)
+```{r question-8a}
+model_complex<- lmer(math1st~ses+minority+sex+yearstea+mathknow+mathprep+housepov+(minority|schoolid)+(0+ses|schoolid)+(1|classid),data=dat,REML = F)
+print(summary(model_complex))
+anova(model_complex,model_ses_school)
 ```
+
+b)
+According to the LRT test, we can conclude that the p-value ofr adding the minority variable random slope(varying at school-level) while allowing correlation to the model conditioning on adding ses variable random slope(varying at school-level) is 0.002. This implies that there is a need for adding both variable to the model. This justified the more complex model. 
+
+c)
+The model for adding both SES variable and Minority variable(varying at school-level while allowing correlation for minority) is 
+$$MATH1ST_{ijk}=b_0+b_1SES_{ijk}+b_2Minority_{ijk}+b_3Sex_{ijk}+b_4Yearstea_{jk}+\\
++b_5Mathknow_{jk}+b_6Mathprep_{jk}+b_7Housepov_k+\eta_{0jk}+\zeta_{ok}+\zeta_{1k}SES_{ijk}+\\
++\zeta_{2k}Minority_{ijk}+\epsilon_{ijk}$$, where $$\eta_{0jk} \sim N(0, \sigma^2_{\eta_0})$$, $$\zeta_0k \sim N(0,\zeta^2_{\zeta_0})$$, $$\zeta_1k \sim N(0,\zeta^2_{\zeta_1})$$, $$\zeta_2k \sim N(0,\zeta^2_{\zeta_2})$$, $$\epsilon_{ijk}\sim N(0,\sigma^2_\epsilon)$$, i represents students, j represents classrooms and k represents schools. $$Corr(\zeta_{0k},\zeta_{2k})=\rho_{\zeta_{0},\zeta_{2}}$$, all other random terms independent of each other. 
+
+
 
 ## Question 9 of 12
 
@@ -196,12 +342,24 @@ c. By what fraction did these each decrease with the new predictors in the model
 ### Solution
 
 ```{r question-9}
-
+print(summary(unconditional_model))
+print(summary(model_all_student))
 ```
+
+a)
+For Unconditional mean model, `V_C` is 85.47 , `V_S` is 280.69, and `V_E` is 1146.79.
+
+b)
+For most complicated model(Random Intercept only), `V_C` is 93.89 , `V_S` is 169.45, and `V_E` is 1064.96.
+
+c)
+For `V_C`, it increased by 9.85%
+For `V_S`, it decreased by 39.63%
+For `V_E`, it decreased by 7.14%
 
 ## Question 10 of 12
 
-Now consider the model with a rancom slope in `ses`.
+Now consider the model with a random slope in `ses`.
 
   a. What are: `V_C`, `V_S` (`ses` = 0), `V_E`?
   
@@ -212,8 +370,15 @@ Now consider the model with a rancom slope in `ses`.
 ### Solution
 
 ```{r question-10}
-
+print(summary(model_ses_school))
 ```
+
+a)
+For model with a random slope in `ses`, the `V_C` is 88.56, `V_S`(`ses`=0) is 168, `V_E` is 1035.11
+
+b)
+`V_S` (`ses` = -0.50) is  $$168+0.5\times72.5=204.5$$
+`V_S` (`ses` = +0.50) is $$168-0.5\times72.5=131.75$$
 
 ## Question 11 of 12
 
@@ -228,12 +393,20 @@ Now consider the model with a random slope in `minority`.
 ### Solution
 
 ```{r question-11}
-
+print(summary(model_minority_school_cor))
 ```
+
+a)
+For model with a random slope in `minority`(allowing correlation,varying at school-level random effect), the `V_C` is 86.7, `V_S` (`minority` = 0) is 381.2, `V_E` is 1039.4.
+
+b)
+`V_S` (`minority` = +0.25) is $$381.2+0.25\times343.2=467$$
+`V_S` (`minority` = +0.50) is $$381.2+0.5\times343.2=552.8$$
+`V_S` (`minority` = +0.75) is $$381.2+0.75\times343.2=638.6$$
 
 ## Question 12 of 12
 
-Now consider the model with a rancom slope in `ses` and `minority`.
+Now consider the model with a random slope in `ses` and `minority`.
 
   a. What are: `V_C`, `V_S` (`minority` = 0, `ses` = 0), `V_E`? 
   
@@ -247,9 +420,26 @@ Now consider the model with a rancom slope in `ses` and `minority`.
   
   e. If you had a large value for $\zeta_{0jk}$, would you expect a large or small or "any" value for the two random slope terms, $\zeta_{1k}$ and $\zeta_{2k}$ for `ses` and `minority` (discuss each separately)?
 
+### solution
 
+```{r, question-12}
+print(summary(model_complex))
+```
 
+a)
+Model with random slope in SES(varying at school-level effect, no correlation with random intercept), Minority(varying at school-level effect, with correlation), `V_C` = 75.7, `V_S` (`minority` = 0, `ses` = 0)= 388.2, `V_E`= 1008.6
 
+b)
+In the last model, $\eta_{0jk}$ (+/- 1 s.d.) are likely to be around -2 to 2 since it fits a normal distribution from 0 to 76. 
+
+c)
+$\zeta_{0k}$ are likely to be from -5 to 5. Since it fits a normal distribution from 0 to 388.
+
+d)
+If $\eta_{0jk}$ is relatively large, then the two random slope $\zeta_{1k}$ and $\zeta_{2k}$ for `ses` and `minority` are not likely to be affected by this change, since $\zeta_{2k}$, $\zeta_{1k}$ and $\eta_{0jk}$ should be independent of each other. 
+
+e)
+If $\zeta_{0jk}$ are likely to be large, then for $\zeta_{1k}$ (`ses`) it would likely to not have an impact since those two coefficient are indepedent of each other. For $\zeta_{2k}$ (`minority`), it would likely to be relatively small since there is negative correlation of -0.85 between those two random effect coefficient. 
 
 
 
