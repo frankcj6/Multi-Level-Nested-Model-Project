@@ -30,9 +30,12 @@ require("lmerTest")
 if(!requireNamespace("car"))
   install.packages("car", repos = "https://cloud.r-project.org")
 require("car")
+
+vanillaR <- F
+    showR <- T
 ```
 
-```{r}
+```{r, tidy = TRUE}
 dat <- read.csv("classroom.csv")
 
 dat$math1st <- dat$mathkind + dat$mathgain
@@ -44,7 +47,7 @@ dat$math1st <- dat$mathkind + dat$mathgain
 ## Question 1
 Refit the model in Part 1 that has all fixed effects as well as random intercepts (in schools and classrooms). Recall that `math1st = mathkind + mathgain` is the outcome. The model is `math1st ~ housepov + yearstea + mathprep + mathknow + ses + sex + minority + (1|schoolid/classid), REML = T)`
 
-```{r}
+```{r, tidy = TRUE}
 # Insert code to fit model and print summary
 
 refit.Part1 <- lmerTest::lmer(math1st ~ housepov + yearstea + mathprep + mathknow + ses + sex + minority + (1|schoolid/classid), data = dat, REML = T) 
@@ -54,11 +57,12 @@ a. Construct the residual that removes only the 'fixed effects' then subtract it
     i. R hint 1: `predict` has an option to generate the prediction based on the fixed effects only. 
     ii. R hint 2: If you decide to add a column to your data frame with resFE, note that predict only generates predictions for cases uses in the model *after listwise deletion.* 
 
-```{r}
+```{r, tidy = TRUE}
 # Insert code here to construct residual 
 
-resFE <- dat$math1st - predict(refit.Part1, re.form = ~0)
-dat$resFE <- resFE
+yhat <- predict(refit.Part1, re.form = ~0)
+dat$resFE[complete.cases(dat)] <- dat$math1st[complete.cases(dat)] - yhat
+
 ```
 
 ## Question 2 
@@ -70,7 +74,7 @@ ord <- order(unlist(tapply(dat$resFE, dat$schoolid, median)))
 if (vanillaR) {
 boxplot(split(dat$resFE, dat$schoolid)[ord])
 } else {
-ggplot(dat, aes(x = reorder(schoolid, resFE, FUN = median), y = resFE)) +
+ggplot(dat[complete.cases(dat),], aes(x = reorder(schoolid, resFE, FUN = median), y = resFE)) +
 geom_boxplot()
 }
 
@@ -81,7 +85,7 @@ geom_boxplot()
     
     i. Call the new residual resFE_RE
     
-```{r}
+```{r, tidy = TRUE}
 # Insert code to construct the residual
 
 save.options <- options()
@@ -96,14 +100,14 @@ dat$resFE_RE[in_sample] <- residuals(refit.Part1)
 
 ## Question 4
 ### a. Show that these new residuals, resFE_RE are MUCH LESS (if not completely un-) correlated within schools, using the same method as before (boxplot?) **(you should comment)** 
-```{r}
+```{r, tidy = TRUE}
 # Insert code to show that new residuals, resFE_RE, is much less correlated within schools
 
 ord <- order(unlist(tapply(dat$resFE_RE, dat$schoolid, median)))
 if (vanillaR) {
 boxplot(split(dat$resFE_RE, dat$schoolid)[ord])
 } else {
-ggplot(dat, aes(x = reorder(schoolid, resFE_RE, FUN = median), y = resFE_RE)) +
+ggplot(dat[complete.cases(dat),], aes(x = reorder(schoolid, resFE_RE, FUN = median), y = resFE_RE)) +
 geom_boxplot()
 }
 ```
@@ -112,7 +116,7 @@ geom_boxplot()
 
 ## Question 5
 ### a. Generate the two sets of BLUPs (for random effects zeta0 and eta0)
-```{r}
+```{r, tidy = TRUE}
 # Insert code to generate the two sets of BLUPS (zeta0 and eta0)
 
 ranefs <- ranef(refit.Part1)
@@ -122,7 +126,7 @@ eta0 <- ranefs$classid[, 1]
 ```
 
 ### b. Examine these for normality (include evidence), **and comment**.
-```{r}
+```{r, tidy = TRUE}
 # Insert code to examine BLUPs for normality
 # par(mfrow=c(1,2)) produces palette for one row of plots with two columns 
 
