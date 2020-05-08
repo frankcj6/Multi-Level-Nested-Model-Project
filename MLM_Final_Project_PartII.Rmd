@@ -30,6 +30,8 @@ require("lmerTest")
 if(!requireNamespace("car"))
   install.packages("car", repos = "https://cloud.r-project.org")
 require("car")
+
+vanillaR
 ```
 
 ## Team Members and division of work: 
@@ -53,6 +55,7 @@ a. Construct the residual that removes only the 'fixed effects' then subtract it
 ```{r}
 math1st.pred<-predict(fit1,re.form=~0)
 dat$resFE[!is.na(dat$mathknow)]<-dat$math1st[!is.na(dat$mathknow)]- math1st.pred
+
 
 #Check with lm function
 # lm2<-lm(math1st ~ housepov + yearstea + mathprep + mathknow + ses + sex + minority , data = dat)
@@ -96,7 +99,7 @@ ggplot(dat[!is.na(dat$resFE_RE),], aes(x = reorder(schoolid, resFE_RE, FUN = med
 ### a. Generate the two sets of BLUPs (for random effects zeta0 and eta0)
 ```{r}
 # Insert code to generate the two sets of BLUPS (zeta0 and eta0)
-ranefs <- lme4::ranef(fit1)
+ranefs1 <- lme4::ranef(fit1)
 zeta0 <- ranefs$schoolid[, 1]
 eta0 <- ranefs$classid[, 1]
 
@@ -127,19 +130,45 @@ qqline(eta0)
 ### a. Fit a slightly more complicated model with the same fixed effects, but now add a random slope for minority, correlated with the random intercept, at the school level (keep the classroom level random intercept).
 ```{r}
 # Insert code to fit the slightly more complicated model and print the summary
-fit2<-lmerTest::lmer(math1st ~ housepov + yearstea + mathprep + mathknow + ses + sex + minority +(minority|schoolid)+(minority||classid), data = dat,REML=T)
+fit2<-lmerTest::lmer(math1st ~ housepov + yearstea + mathprep + mathknow + ses + sex + minority +(minority|schoolid)+(1|schoolid:classid), data = dat,REML=T)
 
+summary(fit2)
 ```
 
 ### b. Construct the residual (individual, level 1) and the BLUPs for the remaining random effects. Call the new residual resFE_RE as before.
 ```{r}
 # Insert code to construct residual and BLUPs 
 
+resFE_RE2<-residuals(fit2)  
+ranefs2 <- lme4::ranef(fit2)
+zeta0_2 <- ranefs2$schoolid[, 1]
+zeta1_2<-ranefs2$schoolid[, 2]
+eta0_2 <- ranefs2$`schoolid:classid`[, 1]
+
 ```
 
 ### c. Examine all error estimates (individual level residuals, BLUPs (school and classroom level) for normality **(and comment)**). 
 ```{r}
 # Insert code to examine error estimates.
+
+par(mfrow=c(2,2))
+plot(density(zeta0_2),main="Density of zeta0 for fit2")
+qqnorm(zeta0_2,main="QQ-Plot of zeta0 for fit2")
+qqline(zeta0_2)
+
+plot(density(zeta1_2),main="Density of zeta1 for fit2")
+qqnorm(zeta1_2,main="QQ-Plot of zeta1 for fit2")
+qqline(zeta1_2)
+
+par(mfrow=c(2,2))
+plot(density(eta0_2),main="Density of eta0 for fit2")
+qqnorm(eta0_2,main="QQ-Plot of eta0 for fit2")
+qqline(eta0_2)
+
+plot(density(resFE_RE2),main="Density of resFE_RE for fit2")
+qqnorm(resFE_RE2,main="QQ-Plot of resFE_RE for fit2")
+qqline(resFE_RE2)
+
 ```
 
     Response: 
@@ -147,9 +176,13 @@ fit2<-lmerTest::lmer(math1st ~ housepov + yearstea + mathprep + mathknow + ses +
 ### d. Plot zeta0 vs. zeta1 to see whether the estimated correlation is consistent with the observed. **Briefly comment**. 
 ```{r}
 # Insert code for plot and estimate correlation
+#correaltion from the output is
+cor(zeta0_2,zeta1_2)
+plot(zeta0_2,zeta1_2)
+
 ```
 
-    Response: 
+    Response: The estimated correlation from the model is -0.83
 
 ### e. Track down those odd points in the scatterplot. What schools are they? Do they have anything in common? **(You should comment)**
 ```{r}
@@ -163,6 +196,13 @@ Make a *person-period* file with math score (Kindergarten and First grade). That
 
 ```{r}
 # Insert code to create the variables math0 and math1 and to reshape data
+
+
+dat$math0 <- dat$mathkind
+dat$math1 <- dat$mathkind + dat$mathgain
+class_pp <- reshape(dat, varying = c("math0", "math1"), v.names = "math", timevar = "year",
+times = c(0, 1), direction = "long")
+
 ```
 
 
@@ -172,6 +212,8 @@ We ignore classrooms in this analysis, but keep it in the notation.
 ### a. Fit a model with `math` as outcome, and fixed effect for time trend (`year`), and random intercepts for schools.
 ```{r}
 # Insert code to fit model and print summary
+fit8a<-lmerTest::lmer(math~year+(1|schoolid),data=class_pp)
+summary(fit8a)
 ```
 
 ### b. Write down the model
@@ -181,6 +223,9 @@ We ignore classrooms in this analysis, but keep it in the notation.
 ### c. Add random intercepts for child
 ```{r}
 # Insert code to fit new model and print summary output
+fit8c<-lmer(math~year+(1|schoolid)+(1|childid),data=class_pp)
+summary(fit8c)
+
 ```
 
 ### d. Write down the model
@@ -190,49 +235,66 @@ We ignore classrooms in this analysis, but keep it in the notation.
 ## Question 9
 Report original and new variance estimates of $\sigma^2_{\zeta_0}$ (between schools) and $\sigma^2_{\varepsilon}$ (within schools):
 
-$\sigma^2_{\zeta_0}:$ \newline
+$\sigma^2_{\zeta_0}:$ 348.7,  307.5 \newline
 \newline
-$\sigma^2_{\varepsilon}:$
+$\sigma^2_{\varepsilon}:$ 1268.4, 599.1
     
 ### a. Compute a pseudo $R^2$ relating the between school variation and ignoring between students in the same school. In other words, what fraction of the between-school variance in the first model is 'explained' by the addition of a student random effect?
 ```{r}
 # Insert code to compute psuedo R^2 or do this inline 
+Rb<-(348.7-307.5)/307.5
 ```
 
 ### b. Does the total variation stay about the same (adding between children within schools variance as well, to the second model results) **(you should comment)**?
     
-    Response:
+    Response: Between children variance is 702. Total Variance for the first model is 348.7+ 1268.4=1617.1 and total Variance for the second model is 307.5+ 599.1+702= 1608.6. They are roughly the same.
     
 ## Question 10 
 Add a random slope ($\zeta_1$) for the trend (year) within schools (uncorrelated with random intercept ($\zeta_0$))
 ```{r}
 # Insert code to fit model and print out summary 
+fit10<-lmer(math~year+(year||schoolid)+(1|childid),data=class_pp)
+summary(fit10)
+
 ```
 
 
 ### a. Generate the BLUPs for the random effects and examine whether the independence between zeta_0 and zeta_1 is reflected in a scatterplot of these two sets of effects. **(you should comment)**
 ```{r}
 # Insert code to generate BLUPs
+ranefs10<-ranef(fit10)
+zeta10_1<-ranefs10$schoolid[,1]
+zeta10_0<-ranefs10$schoolid[,2]
+plot(zeta10_0,zeta10_1)
 ```
 
-    Response: 
+    Response: The plot shows that zeta_0 and zeta_1 are gernerally independent
 
 ### b. Compute V_S(year = 0) and V_S (year = 1). Since there are only two years, this is a form of heteroscedasticity in the random effects.
 ```{r}
 # Insert code to compute terms or do this inline 
+V_S_0<-324.81
+V_S_1<-324.81+1*88.67
 ```
 
 i. In which year is there more between school variation, net of all else, **(you should comment)**?
     
-    Response: 
+    Response: variances between schools are 324.81 for year=0 and 413.48 for year=1
 
 ## Question 11
 If you ran the model BY YEAR, and removed the year trend from the model, would you get the same estimates for the variances between schools? **(you should comment)* *
 ```{r}
 # Insert code to fit the two models by year and print out the summary 
+fit11_0<-lmer(math~1+(1|schoolid),data=class_pp[class_pp$year==0,])
+summary(fit11_0)
+
+#fit110<-lmer((mathkind+mathgain)~(1|schoolid),data=dat)
+
+fit11_1<-lmer(math~1+(1|schoolid),data=class_pp[class_pp$year==1,])
+summary(fit11_1)
 ```
 
-    Response: 
+    Response:The results are different. When running the model separately by year,variances between schools are 364.3 and 306.8.The variation at the school level drops from kindergarten to first grade, suggesting a misspecification in the previous longitudinal model.
 
 ## Question 12 
 Rerun the last nested longitudinal model, allowing correlation between intercept and slope.
@@ -240,18 +302,23 @@ Rerun the last nested longitudinal model, allowing correlation between intercept
 ### a. Is the correlation significant? **(you should comment)**
 ```{r}
 # Insert code to fit model, print the summary output, and compare models
+fit12<-lmer(math~year+(year|schoolid) +(1|childid),dat=class_pp)
+summary(fit12)
+anova(fit10,fit12,refit=F)
 ```
 
-    Response: 
-
+    Response: The correlation is -0.45 and is significant at 5% level, as shown by the LR test between fit10 and fit12.
+    
 ### b. Compute V_S (year = 0) and V_S(year = 1) for this new model (your formula should include covariance terms).
 ```{r}
 # Insert code to compute terms or do this inline 
+V_S12_0=370.6+0*109.1
+V_S12_1=370.6+1*109.1-2*0.45*19.25*10.44
 ```
 
   i. Is this result (and thus model) more consistent with the separate grade analysis? You are implicity testing model fit here. **(you should comment)**
       
-      Response: 
+      Response: Variance between school for year=0 is 370.6, which is now smaller than Variance between school for year=1. This result from model that allows for correlation picks up the ‘drop’ in between-school variance in first gradeis and thus is more consistent with the previous separate grade analysis.
 
 
 
