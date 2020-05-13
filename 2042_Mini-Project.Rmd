@@ -126,8 +126,8 @@ fit_q2 <- lmer(
   outcome ~ predictor + (1 | classid),
   data = classroom_sim
 )
-
-slope_X <- round(
+summary(fit_q2)
+slope_X_q2 <- round(
   summary(fit_q2)$coefficients['predictor', 'Estimate'],
   digits = 4
 )
@@ -135,9 +135,9 @@ slope_X <- round(
 
 a. Report coefficient estimate for slope on X.
 
-    Response: `r slope_X`.
+    Response: `r slope_X_q2`.
 
-b. Does a 95% confidence band for this coefficient estimate cover the “truth” that you used to generate the data? **comment**
+b. Does a 95% confidence band for this coefficient estimate cover the “truth” that you used to generate the data? 
 
 ```{r Q2_b}
 CI_Q2_b <- confint(
@@ -154,35 +154,77 @@ upper <- round(
   digits = 4
 )
 ```
-    Response: Yes. The confidence band (95% of confidence) for this coefficient estimate is between `r lower` and `r upper`. This confirms that a 95% confidence band covers the "truth" of the slope, which is 1.
+    **Response:** Yes. The confidence band (95% of confidence) for this coefficient estimate is between `r lower` and `r upper`. This confirms that a 95% confidence band covers the "truth" of the slope, which is 1.
     
 ### Question 3
 
 3. Next, we simulate missing data in several ways. This is the first:
+
 a. Make a copy of the data, then modify the copy following these instructions:
-```{r}
-# Insert code to make a copy of the data
+
+```{r Q3_a}
+classroom_miss <- classroom_sim
 ```
 
-b. Generate $Z_{ij} \sim$ Bernoulli$(p)$, with $p = 0.5$
+b. Generate $Z_{ij} \sim$ Bernoulli$(p)$, with $p = 0.5$.
+
 c. Set Y to NA when $Z_{ij} == 1$. This should look a lot like "MCAR" missingness.
-```{r}
-# Insert code the generate your data
+
+```{r Q3_c}
+Z_ij <- rbinom(
+  N_i,
+  size = c(0, 1),
+  prob = 0.5
+)
+classroom_miss$missing <- Z_ij
+classroom_miss$outcome <- ifelse(
+  classroom_miss$missing == 1,
+  yes = NA,
+  no = classroom_miss$outcome
+)
 ```
 
 d. Refit the model on the new data and report the coefficient estimate for slope on X. Look at the other parameter estimates as well.
-```{r}
-# Insert code to fit model and compute confidence interval
+
+```{r Q3_d}
+fit_q3 <- lmer(
+  outcome ~ predictor + (1 | classid),
+  data = classroom_miss
+)
+summary(fit_q3)
+
+slope_X_q3 <- round(
+  summary(fit_q3)$coefficients['predictor', 'Estimate'],
+  digits = 4
+)
+
+# Calculate the conficience band of this model
+CI_Q3_d <- confint(
+  fit_q3,
+  parm = "predictor",
+  level = 0.95
+)
+lower <- round(
+  CI_Q3_d[1],
+  digits = 4
+)
+upper <- round(
+  CI_Q3_d[2],
+  digits = 4
+)
 ```
 
-e. Do you see any real change in the $\beta_X$ estimate? **comment**
+e. Do you see any real change in the $\beta_X$ estimate? 
+
+    **Response:** No. The $\beta_X$ estimate of the model with missing data values is `r slope_X_q3`, which is very close to the original estimate, `r slope_X_q2`.
+    
     i. Does a 95% confidence band for this coefficient estimate cover the “truth” that you used to generate the data?
     
-    Response: 
+    **Response:** Yes. The confidence band (95% of confidence) for this coefficient estimate is between `r lower` and `r upper`. This confirms that a 95% confidence band covers the "truth" of the slope, which is 1.
 
-f. What is the total sample size $N$ used in the model fit? **comment**
+f. What is the total sample size $N$ used in the model fit?
 
-    Response:
+    **Response:** The total sample size used in this model fit is `r sum(!is.na(classroom_miss$outcome))`.
     
 ### Question 4: 
 Missing Data II: Make another copy of the original data, then modify the copy as follows:
