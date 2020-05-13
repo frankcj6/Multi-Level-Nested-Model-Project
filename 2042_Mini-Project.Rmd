@@ -9,7 +9,7 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, tidy = TRUE)
 ```
-
+ 
 ```{r dependencies, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
 # Dependencies -----------------------------------------------------------------
 if(!requireNamespace("here"))
@@ -27,8 +27,10 @@ require("lmerTest")
 
 ## Team members and division of work
 
-```{r}
-# Insert code to set.seed
+Frank Jiang, Lisa Song, Yuyue Hua, Seeun Jang, Tong Jin
+
+```{r set-seed}
+set.seed(2042001)
 ```
 
 ### Question 1
@@ -48,13 +50,67 @@ You will generate simulated data for a single school with 100 classrooms, each o
   f. Generate the random quantities in this order to ensure the same solution for everyone: X, $\eta_j$, $\varepsilon_{ij}$ 
   
   g. The outcome has the following form (DGP, given the modeling parameters above):
-$$Y_{ij} = 0 + 1X_{ij} + \eta_j + \varepsilon_{ij} ; \mbox{     } \eta_j \sim N(0,\sigma^2_{\eta}), \varepsilon_{ij} \sim N(0, \sigma^2_{\varepsilon}), indep. $$
+  
+$$
+Y_{ij} = 
+0 + 
+1X_{ij} + 
+\eta_j + 
+\varepsilon_{ij} ;
+\mbox{     } 
+\eta_j \sim N(0,\sigma^2_{\eta}), 
+\varepsilon_{ij} \sim N(0, \sigma^2_{\varepsilon}), 
+\text{indep.} 
+$$
+
   h. Generate a single simulated dataset (you will need a "classid" variable to track classrooms); you can optionally assign a "studentid")
-  i. **Important:** construct classid such that classrooms appear consecutively within the dataframe. As per: `rep(1:J,each=n_j)`
+    i. **Important:** construct classid such that classrooms appear consecutively within the dataframe. As per: `rep(1:J,each=n_j)`
   
   
-```{r}
-# Insert code to generate data and outcome variable, store variables in a dataframe
+```{r Q1}
+# Compute variables related to the equation
+N_j <- 100 # Total number of classrooms
+n_i <- 200 # Number of students in each classroom
+N_i <- N_j * 200 # Total number of students
+
+X_ij <- runif( # Single predictor: Uniform on [0, 1]
+  N_i, 
+  min = 0, 
+  max = 1
+)
+eta_j <- rnorm( # Classroom random effect: Normal on (0, 2)
+  N_j,
+  mean = 0,
+  sd = sqrt(2)
+)
+epsilon_ij <- rnorm( # Subject level error: Normal on (0, 2)
+  N_i,
+  mean = 0,
+  sd = sqrt(2)
+)
+
+# Create equation elements
+eta_j <- rep( # Assign classroom random effect to students in each classroom
+  eta_j,
+  each = n_i
+)
+Y_ij <- 0 + 1 * X_ij + eta_j + epsilon_ij
+
+classid <- rep(
+  1:N_j,
+  each = n_i
+)
+studentid <- seq(
+  1:N_i
+)
+
+# Create a dataframe to store all elements
+classroom_sim <- data.frame(
+  outcome = Y_ij,
+  classid = classid,
+  studentid = studentid,
+  row.names = studentid
+)
 ```
 
   
