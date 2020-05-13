@@ -3,19 +3,19 @@ title: "2042 MLM Mini Project (Spring 2020)"
 subtitle: "Group 1"
 date:  "`r format(Sys.time(), '%B %d %Y')`"
 output:
-  pdf_document: default
+  pdf_document: 
+    latex_engine: xelatex
+    df_print: kable
+fontsize: 10pt
+geometry: margin=1in
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, tidy = TRUE)
+knitr::opts_chunk$set(echo = TRUE)
 ```
  
 ```{r dependencies, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
 # Dependencies -----------------------------------------------------------------
-if(!requireNamespace("here"))
-  install.packages("here", repos = "https://cloud.r-project.org")
-require("here")
-
 if(!requireNamespace("lme4"))
   install.packages("lme4", repos = "https://cloud.r-project.org")
 require("lme4")
@@ -47,7 +47,7 @@ You will generate simulated data for a single school with 100 classrooms, each o
   
   e. `set.seed(2042001)` once at the beginning of your code.
   
-  f. Generate the random quantities in this order to ensure the same solution for everyone: X, $\eta_j$, $\varepsilon_{ij}$ 
+  f. Generate the random quantities in this order to ensure the same solution for everyone: $X$, $\eta_j$, $\varepsilon_{ij}$ 
   
   g. The outcome has the following form (DGP, given the modeling parameters above):
   
@@ -56,15 +56,16 @@ Y_{ij} =
 0 + 
 1X_{ij} + 
 \eta_j + 
-\varepsilon_{ij} ;
-\mbox{     } 
+\varepsilon_{ij} , \\
+
 \eta_j \sim N(0,\sigma^2_{\eta}), 
 \varepsilon_{ij} \sim N(0, \sigma^2_{\varepsilon}), 
 \text{indep.} 
 $$
 
   h. Generate a single simulated dataset (you will need a "classid" variable to track classrooms); you can optionally assign a "studentid")
-    i. **Important:** construct classid such that classrooms appear consecutively within the dataframe. As per: `rep(1:J,each=n_j)`
+    
+  i. **Important:** construct classid such that classrooms appear consecutively within the dataframe. As per: `rep(1:J,each=n_j)`
   
   
 ```{r Q1}
@@ -126,7 +127,10 @@ fit_q2 <- lmer(
   outcome ~ predictor + (1 | classid),
   data = classroom_sim
 )
-summary(fit_q2)
+# Report the model fit
+# summary(fit_q2)
+
+# Calculate the coefficient estimate of slope on X
 slope_X_q2 <- round(
   summary(fit_q2)$coefficients['predictor', 'Estimate'],
   digits = 4
@@ -135,11 +139,11 @@ slope_X_q2 <- round(
 
 a. Report coefficient estimate for slope on X.
 
-    Response: `r slope_X_q2`.
+**Response:** `r slope_X_q2`.
 
 b. Does a 95% confidence band for this coefficient estimate cover the “truth” that you used to generate the data? 
 
-```{r Q2_b}
+```{r Q2_b, message=FALSE}
 CI_Q2_b <- confint(
   fit_q2,
   parm = "predictor",
@@ -154,7 +158,8 @@ upper <- round(
   digits = 4
 )
 ```
-    **Response:** Yes. The confidence band (95% of confidence) for this coefficient estimate is between `r lower` and `r upper`. This confirms that a 95% confidence band covers the "truth" of the slope, which is 1.
+
+**Response:** Yes. The confidence band (95% of confidence) for this coefficient estimate is between `r lower` and `r upper`. This confirms that a 95% confidence band covers the "truth" of the slope, which is 1.
     
 ### Question 3
 
@@ -168,14 +173,17 @@ classroom_miss <- classroom_sim
 
 b. Generate $Z_{ij} \sim$ Bernoulli$(p)$, with $p = 0.5$.
 
-c. Set Y to NA when $Z_{ij} == 1$. This should look a lot like "MCAR" missingness.
-
-```{r Q3_c}
+```{r Q3_b}
 Z_ij <- rbinom(
   N_i,
   size = c(0, 1),
   prob = 0.5
 )
+```
+
+c. Set $Y_{ij}$ to NA when $Z_{ij} == 1$. This should look a lot like "MCAR" missingness.
+
+```{r Q3_c}
 classroom_miss$missing <- Z_ij
 classroom_miss$outcome <- ifelse(
   classroom_miss$missing == 1,
@@ -187,18 +195,21 @@ classroom_miss$outcome <- ifelse(
 d. Refit the model on the new data and report the coefficient estimate for slope on X. Look at the other parameter estimates as well.
 
 ```{r Q3_d}
+# Refit the model using missing data
 fit_q3 <- lmer(
   outcome ~ predictor + (1 | classid),
   data = classroom_miss
 )
-summary(fit_q3)
+# Report the model
+# summary(fit_q3)
 
+# Calculate the new coefficient estimate of slope on X
 slope_X_q3 <- round(
   summary(fit_q3)$coefficients['predictor', 'Estimate'],
   digits = 4
 )
 
-# Calculate the conficience band of this model
+# Calculate the confidence band of this model
 CI_Q3_d <- confint(
   fit_q3,
   parm = "predictor",
@@ -216,22 +227,38 @@ upper <- round(
 
 e. Do you see any real change in the $\beta_X$ estimate? 
 
-    **Response:** No. The $\beta_X$ estimate of the model with missing data values is `r slope_X_q3`, which is very close to the original estimate, `r slope_X_q2`.
+**Response:** No. The $\beta_X$ estimate of the model with missing data values is `r slope_X_q3`, which is very close to the original estimate, `r slope_X_q2`.
     
-    i. Does a 95% confidence band for this coefficient estimate cover the “truth” that you used to generate the data?
+i. Does a 95% confidence band for this coefficient estimate cover the “truth” that you used to generate the data?
     
-    **Response:** Yes. The confidence band (95% of confidence) for this coefficient estimate is between `r lower` and `r upper`. This confirms that a 95% confidence band covers the "truth" of the slope, which is 1.
+**Response:** Yes. The confidence band (95% of confidence) for this coefficient estimate is between `r lower` and `r upper`. This confirms that a 95% confidence band covers the "truth" of the slope, which is 1.
 
 f. What is the total sample size $N$ used in the model fit?
 
-    **Response:** The total sample size used in this model fit is `r sum(!is.na(classroom_miss$outcome))`.
+**Response:** The total sample size used in this model fit is `r sum(!is.na(classroom_miss$outcome))`.
     
-### Question 4: 
+### Question 4
+
 Missing Data II: Make another copy of the original data, then modify the copy as follows:
+
+```{r Q4}
+classroom_miss2 <- classroom_sim
+```
+
 a. Generate $Z_{ij} \sim$ Bernoulli$(X_{ij})$, with $X_{ij}$ your predictor generated previously.
+
+```{r Q4_a}
+Z_ij <- rbinom(
+  N_i,
+  size = c(0, 1),
+  prob = X_ij
+)
+```
+
 b. Set Y to NA when $Z_{ij} == 1$. This should look a lot like "MAR" missingness.
-```{r}
-# Insert code the generate your data
+
+```{r Q4_b}
+
 ```
 c. Refit the model on the new data and report the coefficient estimate for slope on X. Look at the other parameter estimates as well. **comment**
 ```{r}
