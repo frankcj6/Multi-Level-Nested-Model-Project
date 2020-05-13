@@ -2,11 +2,13 @@
 title: "MLM Final Project Part 2ab"
 date:  "`r format(Sys.time(), '%B %d %Y')`"
 output:
-  pdf_document: default
+  pdf_document: 
+    latex_engine: xelatex
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, tidy = TRUE)
+options(tinytex.verbose = TRUE)
 ```
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
@@ -31,7 +33,6 @@ if(!requireNamespace("car"))
   install.packages("car", repos = "https://cloud.r-project.org")
 require("car")
 
-vanillaR
 ```
 
 ## Team Members and division of work: 
@@ -93,15 +94,17 @@ dat$resFE_RE[!is.na(dat$mathknow)]<-residuals(fit1)
 ggplot(dat[!is.na(dat$resFE_RE),], aes(x = reorder(schoolid, resFE_RE, FUN = median), y = resFE_RE)) +geom_boxplot()
 ```
 
-    Response: 
+Response:  The new residuals, resFE_RE, are much less correlated within school. This is because the boxplots are more centered around zero (median for each school would be much closer to zero if the errors are independent). The range of medians for the new residuals is also smaller.
+    
+
 
 ## Question 5
 ### a. Generate the two sets of BLUPs (for random effects zeta0 and eta0)
 ```{r}
 # Insert code to generate the two sets of BLUPS (zeta0 and eta0)
 ranefs1 <- lme4::ranef(fit1)
-zeta0 <- ranefs$schoolid[, 1]
-eta0 <- ranefs$classid[, 1]
+zeta0 <- ranefs1$schoolid[, 1]
+eta0 <- ranefs1$classid[, 1]
 
 ```
 
@@ -124,7 +127,7 @@ qqline(eta0)
 
 ```
 
-    Response: 
+Response: It appears that the BLUPs for classroom effects are fairly normal. Their density plot has a bell-shaped, symmetric distribution and their Q-Q plot has most of the points falling about the straight line. The BLUPs for school effects appear slightly less normal. Their density plot has a less symmetric distribution and the points on their Q-Q plot deviate a bit more from forming a straight line.   
 
 ## Question 6 
 ### a. Fit a slightly more complicated model with the same fixed effects, but now add a random slope for minority, correlated with the random intercept, at the school level (keep the classroom level random intercept).
@@ -171,32 +174,48 @@ qqline(resFE_RE2)
 
 ```
 
-    Response: 
+Response: For school level random effects, the deviation from theoretical quantiles at two tails of the line suggest some non-normality. The classroom effects and residuals are a bit more normal. Although there is still some deviation for residuals, it is probably tolerable.
 
 ### d. Plot zeta0 vs. zeta1 to see whether the estimated correlation is consistent with the observed. **Briefly comment**. 
 ```{r}
 # Insert code for plot and estimate correlation
-#correaltion from the output is
+
 cor(zeta0_2,zeta1_2)
 plot(zeta0_2,zeta1_2)
 
 ```
 
-    Response: The estimated correlation from the model is -0.83
+Response: In spite of the "weird" positively correlated points shown in the plot, the estimated correlation above is -0.7852 which is consistent with what we get from the model(-0.83). These are all large and negative correaltions.
 
 ### e. Track down those odd points in the scatterplot. What schools are they? Do they have anything in common? **(You should comment)**
 ```{r}
 # Insert code if you want to examine odd points 
+zeta<-ranefs2$schoolid
+zeta$schooid<-row.names(zeta)
+zeta_ab1<-zeta[zeta0_2>-10 & zeta0_2<10 & zeta1_2>-10 & zeta1_2<5,]
+plot(zeta_ab1[,1],zeta_ab1[,2])
+abline(a=0.3,b=0.52,col=2)
+abline(a=-0.3,b=0.52,col=2)
+
+zeta_ab2<-zeta[0.3+0.52*zeta0_2>zeta1_2 & -0.3+0.52*zeta0_2<zeta1_2,]
+plot(zeta_ab2[,1],zeta_ab2[,2])
+
+#Part of Schoolids for the weird points
+head(zeta_ab2[,3])
+
+dat2<-dat[dat$schoolid %in% zeta_ab2[,3],]
+
+library(dplyr)
+head(dat2 %>% group_by(schoolid) %>% summarize(mean(minority)))
 ```
 
-    Response: 
+Response: We can see that the odd points are from schools where high proportion of students or even all of them are minorities.
 
 ## Question 7
 Make a *person-period* file with math score (Kindergarten and First grade). That is, `math0 <- mathkind; math1 <- mathkind + mathgain` (you have to make this work in the dataframe). Using `reshape` in R, you have to be careful to specify the name of the math variable (`math0` and `math1`) as *varying*. 
 
 ```{r}
 # Insert code to create the variables math0 and math1 and to reshape data
-
 
 dat$math0 <- dat$mathkind
 dat$math1 <- dat$mathkind + dat$mathgain
@@ -209,7 +228,7 @@ times = c(0, 1), direction = "long")
 ## Question 8
 We ignore classrooms in this analysis, but keep it in the notation. 
 
-### a. Fit a model with `math` as outcome, and fixed effect for time trend (`year`), and random intercepts for schools.
+### a. Fit a model with math as outcome, and fixed effect for time trend (year), and random intercepts for schools.
 ```{r}
 # Insert code to fit model and print summary
 fit8a<-lmerTest::lmer(math~year+(1|schoolid),data=class_pp)
@@ -219,6 +238,8 @@ summary(fit8a)
 ### b. Write down the model
 
     Equation: 
+    
+  $MATH_{tijk} = b_0+\zeta_{0k}+(b_1+\zeta_{1k})TIME_{tijk}+\varepsilon_{tijk}$ and assume $\zeta_{0k}$~$N(0,\sigma^2_{\zeta0})$, $\varepsilon_{tijk}$~$N(0,\sigma^2_{\varepsilon})$, all independent with each other.
     
 ### c. Add random intercepts for child
 ```{r}
@@ -231,23 +252,24 @@ summary(fit8c)
 ### d. Write down the model
 
     Equation: 
+  $MATH_{tijk} = b_0+\delta_{0ijk}+\zeta_{0k}+(b_1+\zeta_{1k})TIME_{tijk}+\varepsilon_{tijk}$ and assume  $\delta_{0ijk}$~$N(0,\sigma^2_{\delta0})$, $\zeta_{0k}$~$N(0,\sigma^2_{\zeta0})$, $\varepsilon_{tijk}$~$N(0,\sigma^2_{\varepsilon})$, all independent with each other.
 
 ## Question 9
 Report original and new variance estimates of $\sigma^2_{\zeta_0}$ (between schools) and $\sigma^2_{\varepsilon}$ (within schools):
 
-$\sigma^2_{\zeta_0}:$ 348.7,  307.5 \newline
+$\sigma^2_{\zeta_0}:$ 348.7(original),  307.5(new) \newline
 \newline
-$\sigma^2_{\varepsilon}:$ 1268.4, 599.1
+$\sigma^2_{\varepsilon}:$ 1268.4(original), 599.1(new)
     
 ### a. Compute a pseudo $R^2$ relating the between school variation and ignoring between students in the same school. In other words, what fraction of the between-school variance in the first model is 'explained' by the addition of a student random effect?
 ```{r}
 # Insert code to compute psuedo R^2 or do this inline 
-Rb<-(348.7-307.5)/307.5
+Rb<-(348.7-307.5)/348.7
 ```
 
 ### b. Does the total variation stay about the same (adding between children within schools variance as well, to the second model results) **(you should comment)**?
     
-    Response: Between children variance is 702. Total Variance for the first model is 348.7+ 1268.4=1617.1 and total Variance for the second model is 307.5+ 599.1+702= 1608.6. They are roughly the same.
+Response: Between children variance is 702. Total Variance for the first model is 348.7+ 1268.4=1617.1 and total Variance for the second model is 307.5+ 599.1+702= 1608.6. They are roughly the same.
     
 ## Question 10 
 Add a random slope ($\zeta_1$) for the trend (year) within schools (uncorrelated with random intercept ($\zeta_0$))
@@ -266,9 +288,10 @@ ranefs10<-ranef(fit10)
 zeta10_1<-ranefs10$schoolid[,1]
 zeta10_0<-ranefs10$schoolid[,2]
 plot(zeta10_0,zeta10_1)
+cor(zeta10_0,zeta10_1)
 ```
 
-    Response: The plot shows that zeta_0 and zeta_1 are gernerally independent
+Response: The correlation between zeta_0 and zeta_1 is -0.11, which is pretty small and the scatterplot shows no obvious trend between zeta_0 and zeta_1. They are gernerally independent.
 
 ### b. Compute V_S(year = 0) and V_S (year = 1). Since there are only two years, this is a form of heteroscedasticity in the random effects.
 ```{r}
@@ -279,7 +302,7 @@ V_S_1<-324.81+1*88.67
 
 i. In which year is there more between school variation, net of all else, **(you should comment)**?
     
-    Response: variances between schools are 324.81 for year=0 and 413.48 for year=1
+    Response: Year 1 has more between school variation. Variances between schools are 324.81 for year 0 and 413.48 for year 1.
 
 ## Question 11
 If you ran the model BY YEAR, and removed the year trend from the model, would you get the same estimates for the variances between schools? **(you should comment)* *
@@ -294,7 +317,7 @@ fit11_1<-lmer(math~1+(1|schoolid),data=class_pp[class_pp$year==1,])
 summary(fit11_1)
 ```
 
-    Response:The results are different. When running the model separately by year,variances between schools are 364.3 and 306.8.The variation at the school level drops from kindergarten to first grade, suggesting a misspecification in the previous longitudinal model.
+Response: The results are different. When running the model separately by year,variances between schools are 364.3 for year 0 and 306.8 for year 1. The variation at the school level drops from kindergarten to first grade. However in question 10, year 1 has more between school variation, which might suggest a misspecification in the nested longitudinal model in question 10.
 
 ## Question 12 
 Rerun the last nested longitudinal model, allowing correlation between intercept and slope.
@@ -307,7 +330,8 @@ summary(fit12)
 anova(fit10,fit12,refit=F)
 ```
 
-    Response: The correlation is -0.45 and is significant at 5% level, as shown by the LR test between fit10 and fit12.
+   
+Response: The correlation is -0.45 and is significant at 5% level, as shown by the LR test between fit10 and fit12.
     
 ### b. Compute V_S (year = 0) and V_S(year = 1) for this new model (your formula should include covariance terms).
 ```{r}
@@ -318,7 +342,7 @@ V_S12_1=370.6+1*109.1-2*0.45*19.25*10.44
 
   i. Is this result (and thus model) more consistent with the separate grade analysis? You are implicity testing model fit here. **(you should comment)**
       
-      Response: Variance between school for year=0 is 370.6, which is now smaller than Variance between school for year=1. This result from model that allows for correlation picks up the ‘drop’ in between-school variance in first gradeis and thus is more consistent with the previous separate grade analysis.
+Response: Variance between school for year=0 is 370.6, which is now smaller than variance between school for year=1. This result from model that allows for correlation picks up the ‘drop’ in between-school variance in first grade and thus is more consistent with the previous separate grade analysis.
 
 
 
