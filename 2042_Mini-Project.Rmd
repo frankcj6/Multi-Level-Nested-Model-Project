@@ -107,32 +107,57 @@ studentid <- seq(
 # Create a dataframe to store all elements
 classroom_sim <- data.frame(
   outcome = Y_ij,
+  predictor = X_ij,
+  cls_raneff = eta_j,
+  subject_error = epsilon_ij,
   classid = classid,
   studentid = studentid,
   row.names = studentid
 )
 ```
 
-  
-### Question 2: 
+### Question 2
+
 Fit the model corresponding to the DGP on your simulated data.
-```{r}
-# Insert code to fit model and print summary
+
+```{r Q2}
+# Fit the model in Q1
+fit_q2 <- lmer(
+  outcome ~ predictor + (1 | classid),
+  data = classroom_sim
+)
+
+slope_X <- round(
+  summary(fit_q2)$coefficients['predictor', 'Estimate'],
+  digits = 4
+)
 ```
 
 a. Report coefficient estimate for slope on X.
 
-    Response: 
+    Response: `r slope_X`.
 
 b. Does a 95% confidence band for this coefficient estimate cover the “truth” that you used to generate the data? **comment**
 
-```{r}
-# Insert code to compute confidence interval 
+```{r Q2_b}
+CI_Q2_b <- confint(
+  fit_q2,
+  parm = "predictor",
+  level = 0.95
+)
+lower <- round(
+  CI_Q2_b[1],
+  digits = 4
+)
+upper <- round(
+  CI_Q2_b[2],
+  digits = 4
+)
 ```
-
-    Response:
+    Response: Yes. The confidence band (95% of confidence) for this coefficient estimate is between `r lower` and `r upper`. This confirms that a 95% confidence band covers the "truth" of the slope, which is 1.
     
-### Question 3:
+### Question 3
+
 3. Next, we simulate missing data in several ways. This is the first:
 a. Make a copy of the data, then modify the copy following these instructions:
 ```{r}
