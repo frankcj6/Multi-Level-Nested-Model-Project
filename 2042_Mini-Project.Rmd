@@ -19,7 +19,6 @@ knitr::opts_chunk$set(echo = TRUE)
 if(!requireNamespace("lme4"))
   install.packages("lme4", repos = "https://cloud.r-project.org")
 require("lme4")
-
 if(!requireNamespace("lmerTest"))
   install.packages("lmerTest", repos = "https://cloud.r-project.org")
 require("lmerTest")
@@ -27,7 +26,21 @@ require("lmerTest")
 
 ## Team members and division of work
 
-Frank Jiang, Lisa Song, Yuyue Hua, Seeun Jang, Tong Jin
+**Group 1 Team Members:**
+
+  Frank Jiang, Lisa Song, Yuyue Hua, Seeun Jang, Tong Jin
+
+**Division of Work:**
+
+  **Frank Jiang**: Group project 1
+
+  **Lisa Song**: Group project 2, part a and b
+
+  **Yuyue Hua**: Group project 2, part a and b
+
+  **Seeun Jang**: Group project 2, part a and b
+
+  **Tong Jin**: The mini project
 
 ```{r set-seed}
 set.seed(2042001)
@@ -64,7 +77,7 @@ $$
 
   h. Generate a single simulated dataset (you will need a "classid" variable to track classrooms); you can optionally assign a "studentid")
     
-  i. **Important:** construct classid such that classrooms appear consecutively within the dataframe. As per: `rep(1:J,each=n_j)`
+  i. **Important:** construct classid such that classrooms appear consecutively within the data frame. As per: `rep(1:J,each=n_j)`
   
   
 ```{r Q1}
@@ -138,7 +151,7 @@ slope_X_q2 <- round(
 
 a. Report coefficient estimate for slope on X.
 
-**Response:** `r slope_X_q2`.
+**Response:** The coefficient estimate is `r slope_X_q2`.
 
 b. Does a 95% confidence band for this coefficient estimate cover the “truth” that you used to generate the data? 
 
@@ -193,7 +206,7 @@ classroom_miss$outcome <- ifelse(
 
 d. Refit the model on the new data and report the coefficient estimate for slope on X. Look at the other parameter estimates as well.
 
-```{r Q3_d}
+```{r Q3_d, message=FALSE}
 # Refit the model using missing data
 fit_q3 <- lmer(
   outcome ~ predictor + (1 | classid),
@@ -224,7 +237,7 @@ upper <- round(
 )
 ```
 
-**Response:** `r slope_X_q3`.
+**Response:** The coefficient estimate is `r slope_X_q3`.
 
 e. Do you see any real change in the $\beta_X$ estimate? 
 
@@ -299,13 +312,15 @@ upper <- round(
   digits = 4
 )
 ```
-**Response:** `r slope_X_q4`.
+**Response:** The coefficient estimate is `r slope_X_q4`.
 
-d. Do you see any real change in the $\beta_X$ estimate? Does a 95% confidence band for this coefficient estimate cover the “truth” that you used to generate the data? 
+d. Do you see any real change in the $\beta_X$ estimate? 
     
 **Response:** No. The $\beta_X$ estimate of the model with missing data values is `r slope_X_q4`, which is very close to the original estimate, `r slope_X_q2`.
 
-Yes. The confidence band (95% of confidence) for this coefficient estimate is between `r lower` and `r upper`. This confirms that a 95% confidence band covers the "truth" of the slope, which is 1.
+i. Does a 95% confidence band for this coefficient estimate cover the “truth” that you used to generate the data? 
+
+**Response:** Yes. The confidence band (95% of confidence) for this coefficient estimate is between `r lower` and `r upper`. This confirms that a 95% confidence band covers the "truth" of the slope, which is 1.
 
 e. What is the total sample size $N$ used in the model fit?
 
@@ -381,15 +396,17 @@ upper <- round(
 )
 ```
 
-**Response:** `r slope_X_q5`.
+**Response:** The coefficient estimate is `r slope_X_q5`.
 
 e. Do you see any real change in the $\beta_X$ estimate? 
 
 **Response:** No. The $\beta_X$ estimate of the model with missing data values is `r slope_X_q5`, which is very close to the original estimate, `r slope_X_q2`.
 
-Yes. The confidence band (95% of confidence) for this coefficient estimate is between `r lower` and `r upper`. This confirms that a 95% confidence band covers the "truth" of the slope, which is 1.
+i. Does a 95% confidence band for this coefficient estimate cover the "truth" that you used to generate the data?
 
-e. What is the total sample size $N$ used in the model fit?
+**Response:** Yes. The confidence band (95% of confidence) for this coefficient estimate is between `r lower` and `r upper`. This confirms that a 95% confidence band covers the "truth" of the slope, which is 1.
+
+f. What is the total sample size $N$ used in the model fit?
 
 **Response:** The total sample size used in this model fit is `r sum(!is.na(classroom_miss3$outcome))`.
 
