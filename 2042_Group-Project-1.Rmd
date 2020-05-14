@@ -59,11 +59,11 @@ Estimate an Unconditional Means Model (UMM) with random intercepts for **both** 
 ```{r question-1}
 unconditional_model<-lmer(math1st~(1|schoolid/classid),data=dat)
 print(summary(unconditional_model))
-ICC_class<-280.69/(280.69+1146.79)
-ICC_school<- 85.47/(85.47+1146.79)
+ICC_class<-280.69/(280.69+1146.79+85.47)
+ICC_school<- 85.47/(85.47+1146.79+280.69)
 ```
 a)
-$ICC_{school}=\frac{\sigma^2_\zeta}{\sigma^2_\zeta+\sigma^2_\epsilon}=\frac{85.47}{85.47+1146.79}=0.069$, $ICC_{class}=\frac{\sigma^2_\zeta}{\sigma^2_\zeta+\sigma^2_\epsilon}=\frac{280.69}{280.69+1146.79}=0.197$
+$ICC_{school}=\frac{\sigma^2_\zeta}{\sigma^2_\zeta+\sigma^2_\epsilon}=\frac{85.47}{85.47+1146.79+280.69}=0.056$, $ICC_{class}=\frac{\sigma^2_\zeta}{\sigma^2_\zeta+\sigma^2_\epsilon}=\frac{280.69}{280.69+1146.79+85.47}=0.186$
 
 b)
 The unconditional model fitting on math1st with random intercepts for schoolid and classid is $$MATH1ST_{ijk}=b_0 + \eta_{jk}+\zeta_{k}+\epsilon_{ijk}$$, where $$\eta_{jk} \sim N(0, \sigma^2_\eta)$$, $$\zeta_k \sim N(0,\zeta^2_\zeta)$$, independently of each other and $$\epsilon_{ijk}\sim N(0,\sigma^2_\epsilon)$$, j represents classrooms and k represents schools.
@@ -400,9 +400,9 @@ a)
 For model with a random slope in `minority`(allowing correlation,varying at school-level random effect), the `V_C` is 86.7, `V_S` (`minority` = 0) is 381.2, `V_E` is 1039.4.
 
 b)
-`V_S` (`minority` = +0.25) is $$381.2+0.25\times343.2=467$$
-`V_S` (`minority` = +0.50) is $$381.2+0.5\times343.2=552.8$$
-`V_S` (`minority` = +0.75) is $$381.2+0.75\times343.2=638.6$$
+`V_S` (`minority` = +0.25) is $$381.2+0.25^2\times343.2=402.65$$
+`V_S` (`minority` = +0.50) is $$381.2+0.5^2\times343.2=467$$
+`V_S` (`minority` = +0.75) is $$381.2+0.75^2\times343.2=574.25$$
 
 ## Question 12 of 12
 
