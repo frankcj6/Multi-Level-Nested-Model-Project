@@ -2,12 +2,12 @@
 title: "2042 MLM Mini Project (Spring 2020)"
 subtitle: "Group 1"
 date:  "`r format(Sys.time(), '%B %d %Y')`"
-output:
-  pdf_document: 
-    latex_engine: xelatex
-    df_print: kable
+output: pdf_document
 fontsize: 10pt
 geometry: margin=1in
+header-includes:
+   - \usepackage{amsmath,amsthm}
+   - \usepackage{amssymb}
 ---
 
 ```{r setup, include=FALSE}
@@ -57,10 +57,9 @@ Y_{ij} =
 1X_{ij} + 
 \eta_j + 
 \varepsilon_{ij} , \\
-
 \eta_j \sim N(0,\sigma^2_{\eta}), 
 \varepsilon_{ij} \sim N(0, \sigma^2_{\varepsilon}), 
-\text{indep.} 
+\text{indep.}
 $$
 
   h. Generate a single simulated dataset (you will need a "classid" variable to track classrooms); you can optionally assign a "studentid")
