@@ -2,7 +2,10 @@
 title: "2042 MLM Mini Project (Spring 2020)"
 subtitle: "Group 1"
 date:  "`r format(Sys.time(), '%B %d %Y')`"
-output: pdf_document
+output: 
+  pdf_document:
+    latex_engine: xelatex
+mainfont: Times New Roman
 fontsize: 10pt
 geometry: margin=1in
 header-includes:
@@ -32,19 +35,23 @@ require("lmerTest")
 
 **Division of Work:**
 
-  **Frank Jiang**: Group project 1
+  **Frank Jiang**: Group project part 1
 
-  **Lisa Song**: Group project 2, part a and b
+  **Lisa Song**: Group project part 2
 
-  **Yuyue Hua**: Group project 2, part a and b
+  **Yuyue Hua**: Group project part 2
 
-  **Seeun Jang**: Group project 2, part a and b
+  **Seeun Jang**: Group project part 1
 
-  **Tong Jin**: The mini project
+  **Tong Jin**: The mini project, wrap-up
+  
+  **All team members**: Review all submissions
 
 ```{r set-seed}
 set.seed(2042001)
 ```
+
+\newpage
 
 ### Question 1
 
@@ -129,6 +136,8 @@ classroom_sim <- data.frame(
 )
 ```
 
+\newpage
+
 ### Question 2
 
 Fit the model corresponding to the DGP on your simulated data.
@@ -173,6 +182,8 @@ upper <- round(
 
 **Response:** Yes. The confidence band (95% of confidence) for this coefficient estimate is between `r lower` and `r upper`. This confirms that a 95% confidence band covers the "truth" of the slope, which is 1.
     
+\newpage    
+
 ### Question 3
 
 3. Next, we simulate missing data in several ways. This is the first:
@@ -188,7 +199,7 @@ b. Generate $Z_{ij} \sim$ Bernoulli$(p)$, with $p = 0.5$.
 ```{r Q3_b}
 Z_ij <- rbinom(
   N_i,
-  size = c(0, 1),
+  size = 1,
   prob = 0.5
 )
 ```
@@ -250,6 +261,8 @@ i. Does a 95% confidence band for this coefficient estimate cover the â€œtruthâ€
 f. What is the total sample size $N$ used in the model fit?
 
 **Response:** The total sample size used in this model fit is `r sum(!is.na(classroom_miss$outcome))`.
+
+\newpage
     
 ### Question 4
 
@@ -264,7 +277,7 @@ a. Generate $Z_{ij} \sim$ Bernoulli$(X_{ij})$, with $X_{ij}$ your predictor gene
 ```{r Q4_a}
 Z_ij <- rbinom(
   N_i,
-  size = c(0, 1),
+  size = 1,
   prob = X_ij
 )
 ```
@@ -326,6 +339,8 @@ e. What is the total sample size $N$ used in the model fit?
 
 **Response:** The total sample size used in this model fit is `r sum(!is.na(classroom_miss2$outcome))`.
 
+\newpage
+
 ### Question 5
 
 Missing Data III: Make another copy of the original data, then modify the copy as follows:
@@ -347,12 +362,12 @@ b. Generate $Z_{ij} \sim$ Bernoulli$(expit(Y_{ij}))$, with $Y_{ij}$ your *outcom
 ```{r Q5_b}
 Z_ij <- rbinom(
   N_i,
-  size = c(0, 1),
+  size = 1,
   prob = expit(Y_ij)
 )
 ```
 
-c. Set Y to NA when $Z_{ij} == 1$. This should look like a violation of "MAR" missingness (missingness depedents on outcome and cannot be *simply* predicted with the predictor set -- Y should be correlated with X, though, so it might not be too bad a violation). 
+c. Set Y to NA when $Z_{ij} == 1$. This should look like a violation of "MAR" missingness (missingness dependents on outcome and cannot be *simply* predicted with the predictor set -- Y should be correlated with X, though, so it might not be too bad a violation). 
 
 ```{r Q5_c}
 classroom_miss3$missing <- Z_ij
@@ -400,11 +415,11 @@ upper <- round(
 
 e. Do you see any real change in the $\beta_X$ estimate? 
 
-**Response:** No. The $\beta_X$ estimate of the model with missing data values is `r slope_X_q5`, which is very close to the original estimate, `r slope_X_q2`.
+**Response:** Yes. The $\beta_X$ estimate of the model with missing data values is `r slope_X_q5`, which decreases significantly to the original estimate, `r slope_X_q2`.
 
 i. Does a 95% confidence band for this coefficient estimate cover the "truth" that you used to generate the data?
 
-**Response:** Yes. The confidence band (95% of confidence) for this coefficient estimate is between `r lower` and `r upper`. This confirms that a 95% confidence band covers the "truth" of the slope, which is 1.
+**Response:** No. The confidence band (95% of confidence) for this coefficient estimate is between `r lower` and `r upper`. This confirms that a 95% confidence band **does not** covers the "truth" of the slope, which is 1.
 
 f. What is the total sample size $N$ used in the model fit?
 
