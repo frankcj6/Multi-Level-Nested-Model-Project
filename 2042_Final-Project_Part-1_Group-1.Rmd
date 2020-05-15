@@ -520,9 +520,7 @@ fit_test_q5_yearstea_cor <- anova(model_yearstea_cor,
 fit_test_q5_yearstea_cor
 ```
 
-e. There are a couple things I noticed interesting after allowing for correlation between random slopes and intercepts. 
-
-For `mathknow`, the variance component seems not to have a huge influence on the variance component as the variance for class-level effect and residual only slightly varies.
+e. There are a couple things I noticed interesting after allowing for correlation between random slopes and intercepts.
 
 For `mathprep`, the class-level variance dropped by `r var_classid_q5_mathprep - var_classid_q5_mathprep_cor`. However, the school-level intercept variance is `r var_schoolid_q5_mathprep_cor`, which is a huge increase from `r var_schoolid_q5_mathprep`. This might due to the correlation added to the model between `mathprep` random slope and school-level intercept.
 
