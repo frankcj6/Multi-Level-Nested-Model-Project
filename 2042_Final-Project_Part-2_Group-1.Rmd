@@ -266,8 +266,8 @@ Response: It appears that the individual level residuals and BLUPs for classroom
 
 d. Plot zeta0 vs. zeta1 to see whether the estimated correlation is consistent with the observed. **Briefly comment**. 
 ```{r Q6d}
-plot(zeta0.fit2, zeta1.fit2, main="Zeta0 vs. Zeta1",
-   xlab="zeta1", ylab="zeta0", pch=19)
+plot(zeta0.fit2, zeta1.fit2, main="Zeta1 vs. Zeta0",
+   xlab="zeta0", ylab="zeta1", pch=19)
 abline(lm(zeta0.fit2~zeta1.fit2), col="red")
 abline(7,0)
 abline(-6,0)
@@ -304,7 +304,7 @@ library(dplyr)
 head(dat2 %>% group_by(schoolid) %>% summarize(mean(minority)))
 ```
 
-Response: The odd points are from `schoolids` 1, 4, 5, 9, 10, 12, 14, 16, 17, 19, 20, 22, 23, 24, 26, 28, 33, 38, 42, 43, 45, 46, 47, 52, 57, 60, 61, 69, 73, 78, 79, 80, 84, 86, 89, 90, 96, 98, 100, 102, 103, and 106. We can see that the odd points are from schools where high proportion of students or even all of them are minorities.
+Response: The odd points are from `schoolids` 1, 4, 5, 9, 10, 12, 14, 16, 17, 19, 20, 22, 23, 24, 25, 26, 28, 30, 31, 32, 33, 37, 38, 42, 43, 45, 46, 47, 52, 57, 60, 61, 68, 69, 70, 73, 78, 79, 80, 84, 86, 87, 88, 89, 90, 96, 98, 100, 102, 103, and 106. We can see that the odd points are from schools where high proportion of students or even all of them are minorities.
 
 \newpage
 
@@ -416,9 +416,9 @@ delta.fit.M1 <- ranefs.fit.M1$`childid:schoolid`[,1]
 zeta0.fit.M1 <- ranefs.fit.M1$schoolid[,1]
 zeta1.fit.M1 <- ranefs.fit.M1$schoolid[,2]
 
-# Scatterplot of zeta_0 vs. zeta_1
+# Scatterplot of zeta_1 vs. zeta_0
 plot(zeta0.fit.M1, zeta1.fit.M1, 
-     main="Zeta0 vs. Zeta1", xlab="zeta1", ylab="zeta0", pch=19)
+     main="Zeta1 vs. Zeta0", xlab="zeta0", ylab="zeta1", pch=19)
 
 # Correlation between zeta_0 and zeta_1
 cor(zeta0.fit.M1, zeta1.fit.M1)
