@@ -9,7 +9,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE, tidy = TRUE)
 ```
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+```{r, echo = FALSE, message = FALSE, tidy = TRUE}
 ###Load libraries
 if(!requireNamespace("here"))
   install.packages("here", repos = "https://cloud.r-project.org")
@@ -235,16 +235,15 @@ plot(dat_plot, main="Zeta0 vs. Zeta1",
 selectedPoints <- fhs(dat_plot, mark = TRUE)
 print(selectedPoints)
 
-zeta1_sub_odd <- zeta1_sub[-c(8,19,21,22,25,29,31,35,36,39,47:50,54,57,58,59)]
-zeta0_sub_odd <- zeta0_sub[-c(8,19,21,22,25,29,31,35,36,39,47:50,54,57,58,59)]
+zeta1_sub_odd <- zeta1_sub[-c(8,19,21,22,25,29,31,35,36,39,47:50,54,57,58)]
+zeta0_sub_odd <- zeta0_sub[-c(8,19,21,22,25,29,31,35,36,39,47:50,54,57,58)]
 
 odd_points <- data.frame(zeta0_sub_odd,zeta1_sub_odd)
 odd_points
 
-
 ```
 
-    Response: The odd points are from schoolids 1, 4, 5, 9, 10, 12, 14, 16, 17, 19, 20, 22, 23, 24, 26, 28, 33, 38, 42, 43, 45, 46, 47, 52, 57, 60, 61, 69, 73, 78, 79, 80, 84, 86, 89, 90, 96, 98, 100, 102, and 103. It appears that they all have MINORITY=0 in common.
+    Response: The odd points are from schoolids 1, 4, 5, 9, 10, 12, 14, 16, 17, 19, 20, 22, 23, 24, 26, 28, 33, 38, 42, 43, 45, 46, 47, 52, 57, 60, 61, 69, 73, 78, 79, 80, 84, 86, 89, 90, 96, 98, 100, 102, 103, and 106. It appears that they all have MINORITY=0 in common.
 
 ## Question 7
 Make a *person-period* file with math score (Kindergarten and First grade). That is, `math0 <- mathkind; math1 <- mathkind + mathgain` (you have to make this work in the dataframe). Using `reshape` in R, you have to be careful to specify the name of the math variable (`math0` and `math1`) as *varying*. 
