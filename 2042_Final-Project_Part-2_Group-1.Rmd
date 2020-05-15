@@ -1,15 +1,24 @@
 ---
-title: "MLM Final Project Part 2ab"
-date:  "`r format(Sys.time(), '%B %d %Y')`"
-output:
-  pdf_document: default
+title: "2042 MLM Final Group Project (Spring 2020)"
+subtitle: "Part 2"
+author: "Group 1"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  pdf_document:
+    latex_engine: xelatex
+mainfont: Times New Roman
+fontsize: 10pt
+geometry: margin=1in
+header-includes:
+   - \usepackage{amsmath,amsthm}
+   - \usepackage{amssymb}
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, tidy = TRUE)
+knitr::opts_chunk$set(echo = TRUEE)
 ```
 
-```{r, echo = FALSE, message = FALSE, tidy = TRUE}
+```{r, echo = FALSE, message = FALSE}
 ###Load libraries
 if(!requireNamespace("here"))
   install.packages("here", repos = "https://cloud.r-project.org")
@@ -38,14 +47,31 @@ vanillaR <- F
     showR <- T
 ```
 
-```{r, tidy = TRUE}
+```{r load}
 dat <- read.csv("classroom.csv")
 
 dat$math1st <- dat$mathkind + dat$mathgain
 ```
 
+## Team members and division of work
 
-## Team Members and division of work: 
+**Group 1 Team Members:**
+
+  Frank Jiang, Lisa Song, Yuyue Hua, Seeun Jang, Tong Jin
+
+**Division of Work:**
+
+  **Frank Jiang**: Group project part 1
+
+  **Lisa Song**: Group project part 2
+
+  **Yuyue Hua**: Group project part 2
+
+  **Seeun Jang**: Group project part 1
+
+  **Tong Jin**: The mini project
+  
+  **All team members**: Review all submissions
 
 ## Question 1
 Refit the model in Part 1 that has all fixed effects as well as random intercepts (in schools and classrooms). Recall that `math1st = mathkind + mathgain` is the outcome. The model is `math1st ~ housepov + yearstea + mathprep + mathknow + ses + sex + minority + (1|schoolid/classid), REML = T)`

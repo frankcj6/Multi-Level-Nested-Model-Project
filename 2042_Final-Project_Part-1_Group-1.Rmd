@@ -1,0 +1,1067 @@
+---
+title: "2042 MLM Final Group Project (Spring 2020)"
+subtitle: "Part 1"
+author: "Group 1"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  pdf_document:
+    latex_engine: xelatex
+mainfont: Times New Roman
+fontsize: 10pt
+geometry: margin=1in
+header-includes:
+   - \usepackage{amsmath,amsthm}
+   - \usepackage{amssymb}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Team members and division of work
+
+**Group 1 Team Members:**
+
+  Frank Jiang, Lisa Song, Yuyue Hua, Seeun Jang, Tong Jin
+
+**Division of Work:**
+
+  **Frank Jiang**: Group project part 1
+
+  **Lisa Song**: Group project part 2
+
+  **Yuyue Hua**: Group project part 2
+
+  **Seeun Jang**: Group project part 1
+
+  **Tong Jin**: The mini project
+  
+  **All team members**: Review all submissions
+
+```{r dependencies, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+# Dependencies
+if(!requireNamespace("lme4"))
+  install.packages("lme4", repos = "https://cloud.r-project.org")
+require("lme4")
+if(!requireNamespace("lmerTest"))
+  install.packages("lmerTest", repos = "https://cloud.r-project.org")
+require("lmerTest")
+if(!requireNamespace("sjstats"))
+  install.packages("sjstats", repos = "https://cloud.r-project.org")
+require("sjstats")
+if(!requireNamespace("car"))
+  install.packages("car", repos = "https://cloud.r-project.org")
+require("car")
+```
+
+\newpage
+
+## Question 0
+
+We will use the `classroom.csv` data for this project.
+
+  a. `math1st` will be the outcome of interest for this first part.
+  
+      i. Recall that `math1st` = `mathkind` + `mathgain`
+    
+  b. Read in the data (R: store as `dat`)
+  
+  c. Fit all models using **REML** (not the default in R)
+  
+  d. It's best if you use `lmerTest::lmer` rather than `lme4::lmer` to call the MLM function. The former provides *p*-values for fixed effects in the summary.
+  
+  e. There are 2 common error messages one can get from lmer calls: failed to converge (problem with hessian: negative eigenvalue; max|grad| = ...); and singularity. They may both be problematic in a real problem, but the latter suggests that a variance component is on the boundary of the parameter space. 
+    
+      - In your discussion/writeup, consider the latter to be a "convergence problem" and ignore the former. 
+      
+### Solution
+
+Load `classroom.csv` and create `math1st` (fit all models using REML)
+    
+```{r load}
+# Load data and create math1st variable
+dat <- read.csv(
+  "data/classroom.csv",
+  header = TRUE
+)
+# Create a variable and named as math1st
+dat$math1st <- dat$mathkind + dat$mathgain
+
+# School-level predictors:
+#   housepov - average household poverty
+# Classroom-level predictors:
+#   yearstea - years teaching
+#   mathknow - math knowledge
+#   mathprep - math preparation (number of courses)
+# Student-level predictors:
+#   sex
+#   minority
+#   ses - socioeconomic status
+#   mathkind - math score in spring of kindergarten
+#   mathgain - increase in math score from kindergarten to spring of first grade
+```
+
+\newpage
+
+## Question 1
+
+Estimate an Unconditional Means Model (UMM) with random intercepts for *both* schools and classrooms (nested in schools). 
+
+  a. Report the ICC for schools and the ICC for classrooms. 
+  
+  b. **Write out this model** using your preferred notation, but use the same choice of notation for the remainder of your project. 
+  
+    i. Be mindful and explicit about any assumptions made. 
+
+### Solution
+
+```{r question-1}
+# Fit the unconditional model
+unconditional_model <- lmer(math1st ~ (1|schoolid/classid),
+                            data = dat)
+# Report the model fit
+print(summary(unconditional_model))
+
+# Calculate ICC for schools and classrooms
+var_schoolid <- round(as.numeric(VarCorr(unconditional_model)$'schoolid'), 
+                      digits = 3)
+var_classid <- round(as.numeric(VarCorr(unconditional_model)$'classid:schoolid'),
+                     digits = 3)
+var_res <- round(attr(VarCorr(unconditional_model), "sc")^2,
+                 digits = 3)
+var_total <- var_schoolid + var_classid + var_res
+
+ICC_class <- round(var_classid / var_total, digits = 3)
+ICC_school <- round(var_schoolid / var_total, digits = 3)
+```
+
+a. The ICC for schools is `r ICC_school`. Here is the equation:
+
+$$
+ICC_{\text{school}} = 
+\frac{\sigma^2_\zeta}{\sigma^2_{total} + \sigma^2_\varepsilon} =
+\frac{280.69}{85.47 + 1146.79 + 280.69} = 
+0.056
+$$
+, where $\sigma^2_\zeta$ is the variance of school-level random effects, 
+$\sigma^2_{total}$ is the total variance of all random effects, and 
+$\sigma^2_\varepsilon$ is the variance of residual. 
+
+
+The ICC for classrooms is `r ICC_class`. Here is the equation:
+
+$$
+ICC_{\text{class}} = 
+\frac{85.47}{85.47 + 1146.79 + 280.69}=0.186
+$$
+, where $\sigma^2_\eta$ is the variance of classroom-level random effects, 
+$\sigma^2_{total}$ is the total variance of all random effects, and 
+$\sigma^2_\varepsilon$ is the variance of residual. 
+
+b. The unconditional model fitting on `math1st` with random intercepts for `schoolid` and `classid` is:
+
+$$
+MATH1ST_{ijk} = b_0 + \eta_{jk} + \zeta_{k} + \varepsilon_{ijk}\ ,
+$$
+where $\eta_{jk} \sim \mathcal{N}(0, \sigma^2_\eta)$,
+$\zeta_k \sim \mathcal{N}(0,\sigma^2_\zeta)$, independently of each other, and $\varepsilon_{ijk} \sim \mathcal{N}(0,\sigma^2_\varepsilon)$,
+$i$ represents individuals, $j$ represents classrooms, and $k$ represents schools.
+
+\newpage
+
+## Question 2
+
+Add **all** school level predictors.
+
+  a. Report if adding the predictors **as a block** is justified.
+  
+  b. Report change in $\sigma_\zeta^2$.
+  
+### Solution
+
+```{r question-2}
+# Add school-level predictor: housepov
+model_all_school <- lmer(math1st ~ housepov + (1|schoolid/classid),
+                         data = dat)
+# Report the model fit
+print(summary(model_all_school))
+
+# Store the variances of random effects
+var_schoolid_q2 <- round(as.numeric(VarCorr(model_all_school)$'schoolid'),
+                         digits = 3)
+var_classid_q2 <- round(as.numeric(VarCorr(model_all_school)$'classid'),
+                        digits = 3)
+var_res_q2 <- round(attr(VarCorr(model_all_school), "sc")^2,
+                    digits = 3)
+
+# Examine justification of adding the predictor
+fit_test_q2 <- anova(model_all_school,
+                     unconditional_model,
+                     refit = FALSE)
+fit_test_q2
+
+p_q2 <- round(
+  fit_test_q2$'Pr(>Chisq)'[2],
+  digits = 3
+)
+p_housepov_q2 <- round(
+  summary(model_all_school)$coefficients['housepov', 'Pr(>|t|)'],
+  digits = 3
+)
+```
+
+a. The p-value of adding the `housepov` variable to the model is 
+`r p_q2`, which is less than 0.05. Therefore, adding the `housepov` is significant to the model. Additionally, the p-value for the coefficient on the `housepov` variable is `r p_housepov_q2`, which is significant (smaller than 0.05). This also justifies the significance of adding this variable to the model.
+
+b. After adding the school-level variable (`housepov`), the $\sigma^2_\zeta$ dropped from `r var_schoolid` to `r var_schoolid_q2`.
+
+\newpage
+
+## Question 3
+
+Add **all** classroom level predictors.
+
+  a. Report if adding the predictors **as a block** is justified.
+  
+  b. Report change in $\sigma_\eta^2$ and change in $\sigma_\epsilon^2$.
+  
+  c. Give a potential reason as to why $\sigma_\epsilon^2$ is reduced, but not $\sigma_\eta^2$?
+  
+### Solution
+
+```{r question-3}
+# Add classroom-level predictor: yearstea, mathknow, mathprep
+model_all_class <- lmer(
+  math1st ~ yearstea + mathknow + mathprep + housepov + (1|schoolid/classid),
+  data = dat
+)
+# Report the model fit
+print(summary(model_all_class))
+
+# Store the variances of random effects
+var_schoolid_q3 <- round(as.numeric(VarCorr(model_all_class)$'schoolid'),
+                         digits = 3)
+var_classid_q3 <- round(as.numeric(VarCorr(model_all_class)$'classid'),
+                        digits = 3)
+var_res_q3 <- round(attr(VarCorr(model_all_class), "sc")^2,
+                    digits = 3)
+
+# Examine the fit of predictors
+fit_test_q3 <- linearHypothesis(model_all_class,
+                                c('yearstea','mathknow','mathprep'))
+fit_test_q3
+
+p_q3 <- round(fit_test_q3$`Pr(>Chisq)`[2], digits = 3)
+```
+
+a. Based the Wald test, we can conclude that the p-value for adding classroom-level variable is `r p_q3`, which is not significant at the level of 0.05. 
+
+b. The $\sigma_\eta^2$ increased from `r var_classid_q2` (the previous model) to `r var_classid_q3`, while the $\sigma_\varepsilon^2$ dropped from `r var_res_q2` (the previous model) to `r var_res_q3`.
+
+c. The residuals of the model are decreased because some of the variance are explained by adding classroom-level variable. However, to the classroom-level effect, some added variable might not be significant or there might exists some correlation between the added classroom-level variables. 
+
+\newpage
+
+## Question 4
+
+Add (nearly) **all** student level predictors (but not `mathgain` or `mathkind`, as these are outomes in this context).
+
+  a. Report if justified statistically **as a block** of predictors.
+  
+  b. Report change in variance components for all levels.
+  
+  c. Give a potential reason as to why the school level variance component drops from prior model.
+  
+  d. **Write out this model** using your chosen notation.
+  
+### Solution
+
+```{r question-4}
+# Add student-level predictor: ses, minority, ses
+model_all_student <- lmer(
+  math1st ~ sex + minority + ses + yearstea + mathknow + mathprep + housepov + (1|schoolid/classid),
+  data = dat
+)
+
+# Report the model fit
+print(summary(model_all_student))
+
+# Store the variances of random effects
+var_schoolid_q4 <- round(as.numeric(VarCorr(model_all_student)$'schoolid'),
+                         digits = 3)
+var_classid_q4 <- round(as.numeric(VarCorr(model_all_student)$'classid'),
+                        digits = 3)
+var_res_q4 <- round(attr(VarCorr(model_all_student), "sc")^2,
+                    digits = 3)
+
+# Examine the fit of predictors
+fit_test_q4_aov <- anova(model_all_class,
+                     model_all_student, 
+                     refit = FALSE)
+fit_test_q4_aov
+
+fit_test_q4_hypo <- linearHypothesis(model_all_student,
+                                     c('sex','minority','ses'))
+fit_test_q4_hypo
+
+p_q4 <- round(fit_test_q4_hypo$`Pr(>Chisq)`[2],
+              digits = 3)
+```
+
+a. The p-value of adding the student-level predictors ((`sex`, `minority`, `ses`)) to the model is `r p_q4`, which is less than 0.05. This implies that adding the student-level predictors to the model is significant at the 0.05 level.
+
+b. Comparing to the previous model before adding the student-level predictors, the $\sigma_\eta^2$ dropped from `r var_classid_q3` to `r var_classid_q4`. 
+
+The $\sigma_\varepsilon^2$ dropped from `r var_res_q3` to `r var_res_q4`. 
+
+The $\sigma^2_\zeta$ dropped from `r var_schoolid_q3` to `r var_schoolid_q4`. 
+
+c. The school level variance dropped might due to adding the student-level predictors that may be associated with group (school) effects in the aggregation. Thus, adding the student-level predictors caused the decrease of the school-level variance. 
+
+d. The model after adding the student-level predictors is:
+
+$$
+\begin{split}
+MATH1ST_{ijk} & = b_0 + b_1SES_{ijk} + b_2SEX_{ijk} + b_3MINORITY_{ijk} + \\ 
+              & b_4YEARSTEA_{jk} + b_5MATHKNOW_{jk} + b_6MATHPREP_{jk}+ \\
+              & b_7HOUSEPOV_{k} + \eta_{jk} + \zeta_{k} + \varepsilon_{ijk}
+\end{split}
+$$
+, where $\eta_{jk} \sim \mathcal{N}(0, \sigma^2_\eta)$, 
+$\zeta_k \sim \mathcal{N}(0,\sigma^2_\zeta)$, independently of each other, and $\varepsilon_{ijk}\sim \mathcal{N}(0,\sigma^2_\varepsilon)$, $i$ represents individuals, $j$ represents classrooms, and $k$ represents schools.
+
+\newpage
+
+## Question 5
+
+a. Try to add a random slope for each **teacher level** predictor (varying at the **school level**; one by one separately - not all together).
+
+b. Report the model fit or lack of fit.
+
+c. Why is it a bad idea to include a random slope on the `housepov` effect?
+
+d. Retry the above, allowing the slopes to be correlated with the random intercepts (still one by one).
+
+e. Report anything unusual about the variance components (changes that are in a direction you didn't expect) and any potential explanation for why those changes occurred (*hint: what did you add to the model?*).
+
+### Solution
+
+a. 
+
+```{r question-5a}
+# Add random slope for teacher-level predictors
+# mathknow
+model_mathknow <- lmer(
+  math1st ~ sex + minority + ses + yearstea + mathknow + mathprep + housepov + 
+    (0 + mathknow | schoolid) + (1 | schoolid) + (1 | classid),
+  data = dat
+)
+# Report the model fit
+print(summary(model_mathknow))
+
+# Store the variances of random effects
+var_schoolid_q5_mathknow <- round(
+  as.numeric(VarCorr(model_mathknow)$'schoolid'),
+  digits = 3)
+var_classid_q5_mathknow <- round(
+  as.numeric(VarCorr(model_mathknow)$'classid'),
+  digits = 3)
+var_res_q5_mathknow <- round(
+  attr(VarCorr(model_mathknow), "sc")^2,
+  digits = 3)
+
+# Examine the fit of random slope
+fit_test_q5_mathknow <- anova(model_mathknow,
+                              model_all_student,
+                              refit = FALSE)
+fit_test_q5_mathknow
+
+# mathprep
+model_mathprep <- lmer(
+  math1st ~ sex + minority + ses + yearstea + mathknow + mathprep + housepov +
+    (0 + mathprep | schoolid) + (1 | schoolid) + (1 | classid),
+  data = dat
+)
+# Report the model fit
+print(summary(model_mathprep))
+
+# Store the variances of random effects
+var_schoolid_q5_mathprep <- round(
+  as.numeric(VarCorr(model_mathprep)$'schoolid'),
+  digits = 3)
+var_classid_q5_mathprep <- round(
+  as.numeric(VarCorr(model_mathprep)$'classid'),
+  digits = 3)
+var_res_q5_mathprep <- round(
+  attr(VarCorr(model_mathprep), "sc")^2,
+  digits = 3)
+
+# Examine the fit of random slope
+fit_test_q5_mathprep <- anova(model_mathprep,
+                              model_all_student,
+                              refit = FALSE)
+fit_test_q5_mathprep
+
+# yearstea
+model_yearstea <- lmer(
+  math1st ~ sex + minority + ses + yearstea + mathknow + mathprep + housepov + 
+    (0 + yearstea | schoolid) + (1 | schoolid) + (1 | classid),
+  data = dat
+)
+# Report the model fit
+print(summary(model_yearstea))
+
+# Store the variances of random effects
+var_schoolid_q5_yearstea <- round(
+  as.numeric(VarCorr(model_yearstea)$'schoolid'),
+  digits = 3)
+var_classid_q5_yearstea <- round(
+  as.numeric(VarCorr(model_yearstea)$'classid'),
+  digits = 3)
+var_res_q5_yearstea <- round(
+  attr(VarCorr(model_yearstea), "sc")^2,
+  digits = 3)
+
+# Examine the fit of random slope
+fit_test_q5_yearstea <- anova(model_yearstea,
+                              model_all_student,
+                              refit = FALSE)
+
+# Store the p-values
+p_q5_mathknow <- round(fit_test_q5_mathknow$`Pr(>Chisq)`[2], digits = 3)
+p_q5_mathprep <- round(fit_test_q5_mathprep$`Pr(>Chisq)`[2], digits = 3)
+p_q5_yearstea <- round(fit_test_q5_yearstea$`Pr(>Chisq)`[2], digits = 3)
+```
+
+b. According to the LRT test conducted above, we can conclude that the p-value for adding random slope for teacher level variable `mathknow`, `mathprep` and `yearstea` are `r p_q5_mathknow`, `r p_q5_mathprep`, and `r p_q5_yearstea`. This implies that there is no significant variation for adding those random slopes. Thus, the model for adding all three variables **does not fit**.
+
+c. Because `housepov` are school-level predictor and, therefore, it only varies at the school level. Including `housepov` as a random slope on teacher-level only create an redundant school-level random effects.
+
+d. 
+
+```{r question-5d}
+# Add random slope for teacher-level predictors with correlation
+# mathknow
+model_mathknow_cor <- lmer(
+  math1st ~ sex + minority + ses + yearstea + mathknow + mathprep + housepov + 
+    (mathknow|schoolid) + (1|classid),
+  data = dat
+)
+# Report the model fit
+print(summary(model_mathknow_cor))
+
+# Store the variances of random effects
+var_schoolid_q5_mathknow_cor <- round(
+  as.numeric(VarCorr(model_mathknow_cor)$'schoolid'[1]),
+  digits = 3)
+var_classid_q5_mathknow_cor <- round(
+  as.numeric(VarCorr(model_mathknow_cor)$'classid'[1]),
+  digits = 3)
+var_res_q5_mathknow_cor <- round(
+  attr(VarCorr(model_mathknow_cor), "sc")^2,
+  digits = 3)
+
+# Examine the fit of random slopes
+fit_test_q5_mathknow_cor <- anova(model_mathknow_cor,
+                                  model_all_student,
+                                  refit = FALSE)
+fit_test_q5_mathknow_cor
+
+# mathprep
+model_mathprep_cor <- lmer(
+  math1st ~ sex + minority + ses + yearstea + mathknow + mathprep + housepov + 
+    (mathprep|schoolid) + (1|classid),
+  data = dat
+)
+# Report the model fit
+print(summary(model_mathprep_cor))
+
+# Store the variances of random effects
+var_schoolid_q5_mathprep_cor <- round(
+  as.numeric(VarCorr(model_mathprep_cor)$'schoolid'[1]),
+  digits = 3)
+var_classid_q5_mathprep_cor <- round(
+  as.numeric(VarCorr(model_mathprep_cor)$'classid'[1]),
+  digits = 3)
+var_res_q5_mathprep_cor <- round(
+  attr(VarCorr(model_mathprep_cor), "sc")^2,
+  digits = 3)
+
+# Examine the fit of random slopes
+fit_test_q5_mathprep_cor <- anova(model_mathprep_cor,
+                                  model_all_student,
+                                  refit = FALSE)
+fit_test_q5_mathprep_cor
+
+# yearstea
+model_yearstea_cor <- lmer(
+  math1st ~ sex + minority + ses + yearstea + mathknow + mathprep + housepov + 
+    (yearstea|schoolid) + (1|classid),
+  data = dat
+)
+# Report the model fit
+print(summary(model_yearstea_cor))
+
+# Store the variances of random effects
+var_schoolid_q5_yearstea_cor <- round(
+  as.numeric(VarCorr(model_yearstea_cor)$'schoolid'[1]),
+  digits = 3)
+var_classid_q5_yearstea_cor <- round(
+  as.numeric(VarCorr(model_yearstea_cor)$'classid'[1]),
+  digits = 3)
+var_res_q5_yearstea_cor <- round(
+  attr(VarCorr(model_yearstea_cor), "sc")^2,
+  digits = 3)
+
+# Examine the fit of random slopes
+fit_test_q5_yearstea_cor <- anova(model_yearstea_cor,
+                                  model_all_student,
+                                  refit = FALSE)
+fit_test_q5_yearstea_cor
+```
+
+e. There are a couple things I noticed interesting after allowing for correlation between random slopes and intercepts. 
+
+For `mathknow`, the variance component seems not to have a huge influence on the variance component as the variance for class-level effect and residual only slightly varies.
+
+For `mathprep`, the class-level variance dropped by `r var_classid_q5_mathprep - var_classid_q5_mathprep_cor`. However, the school-level intercept variance is `r var_schoolid_q5_mathprep_cor`, which is a huge increase from `r var_schoolid_q5_mathprep`. This might due to the correlation added to the model between `mathprep` random slope and school-level intercept.
+
+For `yearstea`, the class-level effect variance dropped from `r var_classid_q5_yearstea` to `r var_classid_q5_yearstea_cor`. This variance are explained by the school-level random intercept that are added to the model. Also, the random slope on teacher-level variance is close to 0.54, which is around 0. This might due to the added `yeastea` that aggregate to have an effect and influence on the variation between school-level predictors. 
+
+\newpage
+
+## Question 6
+
+a. Try to add a random slope for each **student level** predictor (varying at the **classroom level**; one by one separately - not all together).
+
+b. Why is it a bad idea to include a classroom-level variable with random slopes at the classroom level?
+
+c. Retry the above, allowing the slopes to be correlated with the random intercepts. Report findings.
+
+### Solution
+
+a. 
+
+```{r question-6a}
+# Add random slope for each student level predictor: varying at classrooms
+# ses
+model_ses <- lmer(
+  math1st ~ sex + minority + ses + yearstea + mathknow + mathprep + housepov + 
+    (0 + ses|classid) + (1|schoolid) + (1|classid),
+  data = dat
+)
+# Report the model fit
+print(summary(model_ses))
+
+# Store the variances of random effects
+var_schoolid_q6_ses <- round(
+  as.numeric(VarCorr(model_ses)$'schoolid'),
+  digits = 3)
+var_classid_q6_ses <- round(
+  as.numeric(VarCorr(model_ses)$'classid'),
+  digits = 3)
+var_res_q6_ses <- round(
+  attr(VarCorr(model_ses), "sc")^2,
+  digits = 3)
+
+# Examine the fit of random slopes
+fit_test_q6_ses <- anova(model_all_student, 
+                         model_ses,
+                         refit = FALSE)
+fit_test_q6_ses
+
+# sex
+model_sex <- lmer(
+  math1st ~ sex + minority + ses + yearstea + mathknow + mathprep + housepov + 
+    (0 + sex|classid) + (1|schoolid) + (1|classid),
+  data = dat
+)
+# Report the model fit
+print(summary(model_sex))
+
+# Store the variances of random effects
+var_schoolid_q6_sex <- round(
+  as.numeric(VarCorr(model_sex)$'schoolid'[1]),
+  digits = 3)
+var_classid_q6_sex <- round(
+  as.numeric(VarCorr(model_sex)$'classid'[1]),
+  digits = 3)
+var_res_q6_sex <- round(
+  attr(VarCorr(model_sex), "sc")^2,
+  digits = 3)
+
+# Examine the fit of random slopes
+fit_test_q6_sex <- anova(model_all_student,
+                         model_sex,
+                         refit = FALSE)
+fit_test_q6_sex
+
+# minority
+model_minority <- lmer(
+  math1st ~ sex + minority + ses + yearstea + mathknow + mathprep + housepov + 
+    (0 + minority|classid) + (1|schoolid) + (1|classid),
+  data = dat
+)
+# Report the model fit
+print(summary(model_minority))
+
+# Store the variances of random effects
+var_schoolid_q6_minority <- round(
+  as.numeric(VarCorr(model_minority)$'schoolid'[1]),
+  digits = 3)
+var_classid_q6_minority <- round(
+  as.numeric(VarCorr(model_minority)$'classid'[1]),
+  digits = 3)
+var_res_q6_minority <- round(
+  attr(VarCorr(model_minority), "sc")^2,
+  digits = 3)
+
+# Examine the fit of random slopes
+fit_test_q6_minority <- anova(model_all_student,
+                              model_sex,
+                              refit = FALSE)
+fit_test_q6_minority
+```
+
+b. Including classroom-level variable with random slopes at the classroom-level will lead to the same effect for each group, which is each classroom. Thus, adding a random slope for the same level does not show the relationship between the outcome variable on different group. 
+
+c. 
+
+```{r question-6c}
+# Add random slope for student-level predictors with correlation
+# ses with correlation
+model_ses_cor <- lmer(
+  math1st ~ ses + minority + sex + yearstea + mathknow + mathprep + housepov + 
+    (1|schoolid) + (ses||classid), 
+  data = dat
+)
+
+# Report the model fit
+print(summary(model_ses_cor))
+
+# Store the variances of random effects
+var_schoolid_q6_ses_cor <- round(
+  as.numeric(VarCorr(model_ses_cor)$'schoolid'[1]),
+  digits = 3)
+var_classid_q6_ses_cor <- round(
+  as.numeric(VarCorr(model_ses_cor)$'classid'[1]),
+  digits = 3)
+var_res_q6_ses_cor <- round(
+  attr(VarCorr(model_ses_cor), "sc")^2,
+  digits = 3)
+
+# Examine the fit of random slopes
+fit_test_q6_ses_cor <- anova(model_all_student,
+                             model_ses_cor,
+                             refit = FALSE)
+fit_test_q6_ses_cor
+
+# sex with correlation
+model_sex_cor <- lmer(
+  math1st ~ sex + minority + ses +  yearstea + mathknow + mathprep + housepov + 
+    (1|schoolid) + (sex|classid),
+  data = dat
+)
+
+# Report the model fit
+print(summary(model_sex_cor))
+
+# Store the variances of random effects
+var_schoolid_q6_sex_cor <- round(
+  as.numeric(VarCorr(model_sex_cor)$'schoolid'[1]),
+  digits = 3)
+var_classid_q6_sex_cor <- round(
+  as.numeric(VarCorr(model_sex_cor)$'classid'[2, 2]),
+  digits = 3)
+var_res_q6_sex_cor <- round(
+  attr(VarCorr(model_sex_cor), "sc")^2,
+  digits = 3)
+
+# Examine the fit of random slopes
+fit_test_q6_sex_cor <- anova(model_all_student,
+                             model_sex_cor,
+                             refit = FALSE)
+fit_test_q6_sex_cor
+
+# minority with correlation
+model_minority_cor <- lmer(
+  math1st ~ sex + minority + ses + yearstea + mathknow + mathprep + housepov + 
+    (1|schoolid) + (minority|classid),
+  data = dat
+)
+# Report the model fit
+print(summary(model_minority_cor))
+
+# Store the variances of random effects
+var_schoolid_q6_minority_cor <- round(
+  as.numeric(VarCorr(model_minority_cor)$'schoolid'[1]),
+  digits = 3)
+var_classid_q6_minority_cor <- round(
+  as.numeric(VarCorr(model_minority_cor)$'classid'[1]),
+  digits = 3)
+var_res_q6_minority_cor <- round(
+  attr(VarCorr(model_minority_cor), "sc")^2,
+  digits = 3)
+
+# Examine the fit of random slopes
+fit_test_q6_minority_cor <- anova(model_all_student,
+                                  model_minority_cor,
+                                  refit = FALSE)
+fit_test_q6_minority_cor
+```
+
+For allowing correlation on `ses` variable, the classroom-level variance drops from `r var_classid_q6_ses` to `r var_classid_q6_ses_cor`. The school-level variance does not change (`r var_schoolid_q6_ses`). The residual also remains the same. The p-value is larger than 0.05, which is not significant. 
+
+For allowing correlation on `sex` variable, the classroom-level variance drops from `r var_classid_q6_sex` to `r var_classid_q6_sex_cor`. The school-level variance does not change. The residual changes slightly. The p-value implies that it might not be a good fit to allow correlation on `sex` variable with random slope.
+
+For allowing correlation on `minority` variable, the classroom-level variance significantly increased from `r var_classid_q6_minority` to `r var_classid_q6_minority_cor`, while the interaction effect variance between student-level variable minority and classroom-level are around 171 with a correlation of -0.82. The p-value is not significant. This significant increase might due to the aggregate effect of student-level predictor `minority` on the classroom-level effect. 
+
+\newpage
+
+## Question 7
+
+a. Try to add a random slope for each **student level** predictor (varying at the **school level**; one by one separately - not all together). 
+
+b. Retry the above, allowing the slopes to be correlated with the random intercepts.
+
+c. Report anything unusual about the variance components (changes that are unexpected).
+
+### Solution
+
+a. 
+
+```{r question-7a}
+# Add random slope for student-level predictors at school-level
+# ses varying at school-level
+model_ses_school <- lmer(
+  math1st ~ sex + minority + ses + yearstea + mathknow + mathprep + housepov + 
+    (0 + ses|schoolid) + (1|schoolid) + (1|classid),
+  data = dat
+)
+# Report the model fit
+print(summary(model_ses_school))
+
+# Store the variances of random effects
+var_schoolid_q7_ses <- round(
+  as.numeric(VarCorr(model_ses_school)$'schoolid'),
+  digits = 3)
+var_classid_q7_ses <- round(
+  as.numeric(VarCorr(model_ses_school)$'classid'),
+  digits = 3)
+var_res_q7_ses <- round(
+  attr(VarCorr(model_ses_school), "sc")^2,
+  digits = 3)
+
+# Examine the fit of random slopes
+fit_test_q7_ses <- anova(model_all_student,
+                         model_ses_school,
+                         refit = FALSE)
+fit_test_q7_ses
+
+# sex varying at school-level
+model_sex_school <- lmer(
+  math1st ~ sex + minority + ses + yearstea + mathknow + mathprep + housepov + 
+    (0 + sex|schoolid) + (1|schoolid) + (1|classid),
+  data = dat
+)
+# Report the model fit
+print(summary(model_sex_school))
+
+# Store the variances of random effects
+var_schoolid_q7_sex <- round(
+  as.numeric(VarCorr(model_sex_school)$'schoolid'[1]),
+  digits = 3)
+var_classid_q7_sex <- round(
+  as.numeric(VarCorr(model_sex_school)$'classid'[1]),
+  digits = 3)
+var_res_q7_sex <- round(
+  attr(VarCorr(model_sex_school), "sc")^2,
+  digits = 3)
+
+# Examine the fit of random slopes
+fit_test_q7_sex <- anova(model_all_student,
+                         model_sex_school,
+                         refit = FALSE)
+fit_test_q7_sex
+
+# minority varying at school-level
+model_minority_school <- lmer(
+  math1st ~ sex + minority + ses + yearstea + mathknow + mathprep + housepov + (0 + minority|schoolid) + (1|schoolid) + (1|classid),
+  data = dat
+)
+# Report the model fit
+print(summary(model_minority_school))
+
+# Store the variances of random effects
+var_schoolid_q7_minority <- round(
+  as.numeric(VarCorr(model_minority_school)$'schoolid'[1]),
+  digits = 3)
+var_classid_q7_minority <- round(
+  as.numeric(VarCorr(model_minority_school)$'classid'[1]),
+  digits = 3)
+var_res_q7_minority <- round(
+  attr(VarCorr(model_minority_school), "sc")^2,
+  digits = 3)
+
+# Examine the fit of random slopes
+fit_test_q7_minority <- anova(model_all_student,
+                             model_minority_school,
+                             refit = FALSE)
+fit_test_q7_minority
+```
+
+b. 
+
+```{r,question-7b}
+# Add random slope for student-level predictors with correlation at school-level
+# ses with correlation
+model_ses_school_cor <- lmer(
+  math1st ~ sex + minority + ses + yearstea + mathknow + mathprep + housepov + 
+    (ses||schoolid) + (1|classid),
+  data = dat
+)
+# Report the model fit
+print(summary(model_ses_school_cor))
+
+# Store the variances of random effects
+var_schoolid_q7_ses_cor <- round(
+  as.numeric(VarCorr(model_ses_school_cor)$'schoolid'[1]),
+  digits = 3)
+var_classid_q7_ses_cor <- round(
+  as.numeric(VarCorr(model_ses_school_cor)$'classid'[1]),
+  digits = 3)
+var_res_q7_ses_cor <- round(
+  attr(VarCorr(model_ses_school_cor), "sc")^2,
+  digits = 3)
+
+# Examine the fit of random slopes
+fit_test_q7_ses_cor <- anova(model_all_student,
+                             model_ses_school_cor,
+                             refit = FALSE)
+
+# sex with correlation
+model_sex_school_cor <- lmer(
+  math1st ~ sex + minority + ses + yearstea + mathknow + mathprep + housepov + 
+    (sex|schoolid) + (1|classid),
+  data = dat
+)
+# Report the model fit
+print(summary(model_sex_school_cor))
+
+# Store the variances of random effects
+var_schoolid_q7_sex_cor <- round(
+  as.numeric(VarCorr(model_sex_school_cor)$'schoolid'[1]),
+  digits = 3)
+var_classid_q7_sex_cor <- round(
+  as.numeric(VarCorr(model_sex_school_cor)$'classid'[1]),
+  digits = 3)
+var_res_q7_sex_cor <- round(
+  attr(VarCorr(model_sex_school_cor), "sc")^2,
+  digits = 3)
+
+# Examine the fit of random slopes
+fit_test_q7_sex_cor <- anova(model_all_student,
+                             model_sex_school_cor,
+                             refit = FALSE)
+
+# minority with correlation
+model_minority_school_cor <- lmer(
+  math1st ~ sex + minority + ses + yearstea + mathknow + mathprep + housepov + 
+    (minority|schoolid) + (1|classid),
+  data = dat
+)
+# Report the model fit
+print(summary(model_minority_school_cor))
+
+# Store the variances of random effects
+var_schoolid_q7_minority_cor <- round(
+  as.numeric(VarCorr(model_minority_school_cor)$'schoolid'[1]),
+  digits = 3)
+var_classid_q7_minority_cor <- round(
+  as.numeric(VarCorr(model_minority_school_cor)$'classid'[1]),
+  digits = 3)
+var_res_q7_minority_cor <- round(
+  attr(VarCorr(model_minority_school_cor), "sc")^2,
+  digits = 3)
+
+# Examine the fit of random slopes
+fit_test_q7_minority_cor <- anova(model_all_student,
+                                  model_minority_school_cor,
+                                  refit = FALSE)
+```
+
+c. One thing that is unusual is that, when allowing correlation between `minority` and `sex` (varying at school-level) random effect, the variance of school-level random intercept and minority random slope has a significant increase from `r var_schoolid_q7_minority` to `r var_schoolid_q7_minority_cor` for `minority` and from `r var_schoolid_q7_sex` to `r var_schoolid_q7_sex_cor`. This might due to the high negative correlation between the random intercept and the random slope. 
+
+Another thing that is unusual is that, when allowing correlation between `ses` (varying at school-level) random effect, the variance has a decrease from `r var_schoolid_q7_ses` to `r var_schoolid_q7_ses_cor`. 
+
+\newpage
+
+## Question 8
+
+a. Take the two predictors that had significant (at $0.05$ level) random slopes, in the forms in which they worked (independent or correlated) and add both to the model, and test for need of one conditional on needing the other.
+
+b. Is the more complex model (with both random slopes in it) justified?
+
+c. **Write out this model** in your preferred notation.
+
+### Solution
+
+a. 
+
+```{r question-8a}
+# Add minority and ses to the model
+model_complex <- lmer(
+  math1st ~ ses + minority + sex + yearstea + mathknow + mathprep + housepov + 
+    (0 + ses|schoolid) + (minority||schoolid) + (1|schoolid) + (1|classid),
+  data = dat
+) 
+# Report the model fit
+print(summary(model_complex))
+
+# Examine the fit of new predictors
+fit_test_q8 <- anova(model_complex,
+                     model_ses_school,
+                     refit = FALSE)
+fit_test_q8
+```
+
+b. According to the LRT test, we can conclude that the p-value of adding the minority variable random slope (varying at school-level) while allowing correlation to the model conditioning on adding `ses` variable random slope (varying at school-level) is 0. This implies that there is a need for adding both variable to the model. This justified the more complex model. 
+
+c. The model for adding both `ses` variable and `minority` variable (varying at school-level while allowing correlation for minority) is:
+
+$$
+\begin{split}
+MATH1ST_{ijk} & = b_0 + b_1SES_{ijk} + b_2MINORITY_{ijk} + b_3SEX_{ijk} + \\
+& b_4YEARSTEA_{jk} + b_5MATHKNOW_{jk} + b_6MATHPREP_{jk} + \\ 
+& b_7HOUSEPOV_k + \\
+& \zeta_{1k}SES_{ijk} + \zeta_{2k}MINORITY_{ijk} + \\ 
+& \eta_{0jk} + \zeta_{0k} + \varepsilon_{ijk},
+\end{split}
+$$
+
+where $\eta_{0jk} \sim \mathcal{N}(0, \sigma^2_{\eta_0})$, 
+$\zeta_{0k} \sim \mathcal{N}(0,\sigma^2_{\zeta_0})$, 
+$\zeta_{1k} \sim \mathcal{N}(0,\sigma^2_{\zeta_1})$, 
+$\zeta_{2k} \sim \mathcal{N}(0,\sigma^2_{\zeta_2})$, 
+$\varepsilon_{ijk}\sim \mathcal{N}(0,\sigma^2_\varepsilon)$, $i$ represents students, $j$ represents classrooms and $k$ represents schools.
+
+$Corr(\zeta_{0k},\zeta_{2k})=\rho_{\zeta_{0},\zeta_{2}}$, all other random terms independent of each other. 
+
+\newpage
+
+## Question 9
+
+a. For UMM, write down: `V_S`, `V_C`, `V_E` for the three variance components (simply the estimates).
+
+b. For the most complicated (all fixed effects) random **intercepts only** model, what are: `V_S`, `V_C`, `V_E`?
+
+c. By what fraction did these each decrease with the new predictors in the model?
+
+### Solution
+
+```{r question-9}
+print(summary(unconditional_model))
+print(summary(model_all_student))
+```
+
+a. For Unconditional mean model, `V_C` is 85.47 , `V_S` is 280.69, and `V_E` is 1146.79.
+
+b. For most complicated model (Random Intercept only), `V_C` is 93.89 , `V_S` is 169.45, and `V_E` is 1064.96.
+
+c. For `V_C`, it increased by 9.85%. For `V_S`, it decreased by 39.63%. For `V_E`, it decreased by 7.14%.
+
+\newpage
+
+## Question 10
+
+Now consider the model with a random slope in `ses`.
+
+  a. What are: `V_C`, `V_S` (`ses` = 0), `V_E`?
+  
+      - We need to list `ses = 0` here, or we don't know how to use the slope variance.
+      
+  b. What are: `V_S` (`ses` = -0.50), `V_S` (`ses` = +0.50)?
+  
+### Solution
+
+```{r question-10}
+print(summary(model_ses_school))
+```
+
+a. For model with a random slope in `ses`, the `V_C` is 88.56, `V_S`(`ses`=0) is 168, `V_E` is 1035.11
+
+b. `V_S` (`ses` = -0.50) is  $168+0.5\times72.5=204.5$
+
+`V_S` (`ses` = +0.50) is $168-0.5\times72.5=131.75$
+
+\newpage
+
+## Question 11
+
+Now consider the model with a random slope in `minority`.
+
+  a. What are: `V_C`, `V_S` (`minority` = 0), `V_E`?
+  
+      - We need to list `minority` = 0 here, or we don't know how to use the slope variance.
+      
+  b. What are: `V_S` (`minority` = +0.25),`V_S` (`minority` = +0.50),`V_S` (`minority` = +0.75)?
+
+### Solution
+
+```{r question-11}
+print(summary(model_minority_school_cor))
+```
+
+a. For model with a random slope in `minority`(allowing correlation, varying at school-level random effect), the `V_C` is 86.7, `V_S` (`minority` = 0) is 381.2, `V_E` is 1039.4.
+
+b. 
+`V_S` (`minority` = +0.25) is $381.2+0.25^2\times343.2=402.65$
+`V_S` (`minority` = +0.50) is $381.2+0.5^2\times343.2=467$
+`V_S` (`minority` = +0.75) is $381.2+0.75^2\times343.2=574.25$
+
+\newpage
+
+## Question 12
+
+Now consider the model with a random slope in `ses` and `minority`.
+
+  a. What are: `V_C`, `V_S` (`minority` = 0, `ses` = 0), `V_E`? 
+  
+      - We need to list `minority` = 0 and `ses` = 0 here, or we don't know how to use the slope variance.
+      
+  b. In the last model, what is a "likely" (+/- 1 s.d.) range for $\eta_{0jk}$.
+  
+  c. Can we make a similar statement about $\zeta_{0k}$?
+  
+  d. If you had a large value for $\eta_{0jk}$, would you expect a large or small or "any" value for the two random slope terms, $\zeta_{1k}$ and $\zeta_{2k}$ for `ses` and `minority`?
+  
+  e. If you had a large value for $\zeta_{0jk}$, would you expect a large or small or "any" value for the two random slope terms, $\zeta_{1k}$ and $\zeta_{2k}$ for `ses` and `minority` (discuss each separately)?
+
+### solution
+
+```{r, question-12}
+print(summary(model_complex))
+```
+a. Model with random slope in `SES` (varying at school-level effect, no correlation with random intercept), `Minority` (varying at school-level effect, with correlation), `V_C` = 80.62, `V_S` (`minority` = 0, `ses` = 0) = 815.17, `V_E`= 1009.73.
+
+b. In the last model, $\eta_{0jk}$ (+/- 1 s.d.) are likely to be around `r 80.62 + 8.979` and `r 80.62 - 8.979`.
+
+c. No. $\zeta_{0k}$ is the variance of school-level random effects.
+
+d. If $\eta_{0jk}$ is relatively large, then the two random slope $\zeta_{1k}$ and $\zeta_{2k}$ for `ses` and `minority` are not likely to be affected by this change, since $\zeta_{2k}$, $\zeta_{1k}$ and $\eta_{0jk}$ should be independent of each other. Therefore, we would expect any values.
+
+e. If $\zeta_{0jk}$ are likely to be large, then for $\zeta_{1k}$ (`ses`) it would likely to not have an impact since those two coefficient are indepedent of each other. For $\zeta_{2k}$ (`minority`), it would likely to be relatively small since there is negative correlation of -0.85 between those two random effect coefficient. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
