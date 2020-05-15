@@ -212,9 +212,12 @@ abline(7,0)
 abline(-6,0)
 abline(v=-11)
 abline(v=12)
+
+# Estimated correlation 
+cor(zeta0.fit2,zeta1.fit2)
 ```
 
-    Response: The estimated correlation is -0.83 but it is not consistent with some of the points in the scatterplot that appear to be positively correlated.   
+    Response: The estimated correlation is -0.785 but it is not consistent with some of the points in the scatterplot that appear to be positively correlated.   
 
 
 ### e. Track down those odd points in the scatterplot. What schools are they? Do they have anything in common? **(You should comment)**
@@ -261,7 +264,7 @@ We ignore classrooms in this analysis, but keep it in the notation.
 ### a. Fit a model with `math` as outcome, and fixed effect for time trend (`year`), and random intercepts for schools.
 ```{r}
 # Insert code to fit model and print summary
-fit.M00 <- lmer(math ~ year + (1 | schoolid/childid), data = class_pp)
+fit.M00 <- lmer(math ~ year + (1 | schoolid), data = class_pp)
 print(summary(fit.M00))
 ```
 
@@ -270,15 +273,14 @@ print(summary(fit.M00))
     Equation:
     
 $$
-MATH_{tijk} = {b_0} + {\delta_{0ijk}} + {\zeta_{0k}} + {b_1}TIM{E_{tijk}} + {\varepsilon_{tijk}},
+MATH_{tijk} = {b_0} + {\zeta_{0k}} + {b_1}TIM{E_{tijk}} + {\varepsilon_{tijk}},
 $$
-and we assume ${\delta_{0ijk}} \sim N(0,\sigma_{{\delta_0}}^2)$, ${\zeta_{0k}} \sim N(0,\sigma_{{\zeta_0}}^2)$, and ${\varepsilon_{tijk}} \sim N(0,\sigma _\varepsilon ^2)$
+and we assume ${\zeta_{0k}} \sim N(0,\sigma_{{\zeta_0}}^2)$ and ${\varepsilon_{tijk}} \sim N(0,\sigma _\varepsilon ^2)$, independently.
     
 ### c. Add random intercepts for child
 ```{r}
 # Insert code to fit new model and print summary output
-fit.M0 <- lmer(math ~ year + (1 | schoolid) + (1 | schoolid:classid) + (1 |
-classid:childid), data = class_pp)
+fit.M0 <- lmer(math ~ year + (1 | schoolid/childid), data = class_pp)
 summary(fit.M0)
 ```
 
@@ -287,41 +289,41 @@ summary(fit.M0)
     Equation: 
 
 $$
-MATH_{tijk} = {b_0} + {\delta_{0ijk}} + {\eta_{0jk}} + {\zeta_{0k}} + {b_1}TIME_{tijk} + {\varepsilon_{tijk}}
+MATH_{tijk} = {b_0} + {\delta_{0ijk}} + {\zeta_{0k}} + {b_1}TIME_{tijk} + {\varepsilon_{tijk}}
 $$
-and assume ${\delta_{0ijk}} \sim N(0,\sigma_{{\delta_0}}^2)$, ${\eta_{0jk}} \sim N(0,\sigma_{{\eta_{00}}}^2)$, ${\zeta_{0k}} \sim N(0,\sigma_{{\zeta_0}}^2)$, and ${\varepsilon_{tijk}} \sim N(0,\sigma _\varepsilon ^2)$, independently.
+and assume ${\delta_{0ijk}} \sim N(0,\sigma_{{\delta_0}}^2)$, ${\zeta_{0k}} \sim N(0,\sigma_{{\zeta_0}}^2)$, and ${\varepsilon_{tijk}} \sim N(0,\sigma _\varepsilon ^2)$, independently.
 
 ## Question 9
 Report original and new variance estimates of $\sigma^2_{\zeta_0}$ (between schools) and $\sigma^2_{\varepsilon}$ (within schools):
 
-$\sigma^2_{\zeta_0}:$ The original variance estimate is 307.5. The new variance estimate is 294.31.
-$\sigma^2_{\varepsilon}:$ The original variance estimate is 599.1. The new variance estimate is 599.05.
+$\sigma^2_{\zeta_0}:$ The original variance estimate is 348.7. The new variance estimate is 307.5.
+$\sigma^2_{\varepsilon}:$ The original variance estimate is 1268.4. The new variance estimate is 599.1.
     
 ### a. Compute a pseudo $R^2$ relating the between school variation and ignoring between students in the same school. In other words, what fraction of the between-school variance in the first model is 'explained' by the addition of a student random effect?
 ```{r}
 # Insert code to compute psuedo R^2 or do this inline 
-(307.5-294.31)/307.5
+(348.7-307.5)/348.7
 ```
-    Response: The proportion of the between-school variance in the first model that is ‘explained’ by the addition of a student random effect is 0.04.
+    Response: The proportion of the between-school variance in the first model that is ‘explained’ by the addition of a student random effect is 0.118.
     
 ### b. Does the total variation stay about the same (adding between children within schools variance as well, to the second model results) **(you should comment)**?
 ```{r}
 # Total variation of first model
-702+307.5+599.1
+348.7+1268.4
 
 # Total variaion of second model
-675.98+39.01+294.31+599.05
+702+307.5+599.1
 ```
 
-    Response: Yes, the total variation stays about the same. The total variation of the first model is 1608.6. The total variation of the second model is 1608.35.
+    Response: Yes, the total variation stays about the same. The total variation of the first model is 1617.1. The total variation of the second model is 1608.6.
     
 ## Question 10 
 Add a random slope ($\zeta_1$) for the trend (year) within schools (uncorrelated with random intercept ($\zeta_0$))
 ```{r}
 # Insert code to fit model and print out summary 
-fit.M1 <- lmer(math ~ year + (year || schoolid) + (1 | schoolid:classid) + (1 |
-classid:childid), data = class_pp)
+fit.M1 <- lmer(math ~ year + (0 + year | schoolid) + (1 | schoolid/childid), data = class_pp)
 summary(fit.M1)
+
 ```
 
 
@@ -329,26 +331,27 @@ summary(fit.M1)
 ```{r}
 # Insert code to generate BLUPs
 ranefs.fit.M1 <- ranef(fit.M1)
-delta.fit.M1 <- ranefs.fit.M1$`classid:childid`[,1]
-eta0.fit.M1 <- ranefs.fit.M1$'schoolid:classid'[, 1]
-zeta0.fit.M1 <- ranefs.fit.M1$schoolid[,2]
-zeta1.fit.M1 <- ranefs.fit.M1$schoolid[,1]
+delta.fit.M1 <- ranefs.fit.M1$`childid:schoolid`[,1]
+zeta0.fit.M1 <- ranefs.fit.M1$schoolid[,1]
+zeta1.fit.M1 <- ranefs.fit.M1$schoolid[,2]
 
 # Scatterplot of zeta_0 vs. zeta_1
 plot(zeta0.fit.M1, zeta1.fit.M1, main="Zeta0 vs. Zeta1",
    xlab="zeta1", ylab="zeta0", pch=19)
 
+# Correlation between zeta_0 and zeta_1
+cor(zeta0.fit.M1, zeta1.fit.M1)
 ```
 
-    Response: Yes, the independence of zeta_0 and zeta_1 is reflected in the scatterplot because there does not seem to be any correlation between the two.
+    Response: Yes, the independence of zeta_0 and zeta_1 is reflected in the scatterplot because there does not seem to be a strong correlation between the two (-0.11).
 
 ### b. Compute V_S(year = 0) and V_S (year = 1). Since there are only two years, this is a form of heteroscedasticity in the random effects.
 ```{r}
 # Insert code to compute terms or do this inline 
-V_S_year0 = 312.12
+V_S_year0 = 324.79
 V_S_year0
 
-V_S_year1 = 312.12 + 88.57
+V_S_year1 = 324.79 + 88.67
 V_S_year1
 ```
 
@@ -360,10 +363,10 @@ i. In which year is there more between school variation, net of all else, **(you
 If you ran the model BY YEAR, and removed the year trend from the model, would you get the same estimates for the variances between schools? **(you should comment)* *
 ```{r}
 # Insert code to fit the two models by year and print out the summary 
-fit.M_K <- lmer(mathkind ~ 1 + (1 | schoolid/classid), data = dat)
+fit.M_K <- lmer(mathkind ~ 1 + (1 | schoolid), data = dat)
 print(summary(fit.M_K))
 
-fit.M_1 <- lmer(math1st ~ 1 + (1 | schoolid/classid), data = dat)
+fit.M_1 <- lmer(math1st ~ 1 + (1 | schoolid), data = dat)
 print(summary(fit.M_1))
 ```
 
@@ -375,8 +378,7 @@ Rerun the last nested longitudinal model, allowing correlation between intercept
 ### a. Is the correlation significant? **(you should comment)**
 ```{r}
 # Insert code to fit model, print the summary output, and compare models
-fit.M2 <- lmer(math ~ year + (year | schoolid) + (1 | schoolid:classid) + (1 |
-classid:childid), data = class_pp)
+fit.M2 <- lmer(math ~ year + (year | schoolid) + (1 | schoolid:childid), data = class_pp)
 summary(fit.M2)
 
 # LRT
@@ -388,10 +390,10 @@ anova(fit.M2, fit.M1, refit = F)
 ### b. Compute V_S (year = 0) and V_S(year = 1) for this new model (your formula should include covariance terms).
 ```{r}
 # Insert code to compute terms or do this inline 
-V_S_year0_new = 357.41
+V_S_year0_new = 370.6
 V_S_year0_new
 
-V_S_year1_new = 357.41 + 2*(-0.46)*10.442*18.905 + 109.03
+V_S_year1_new = 370.6 + 2*(-0.45)*10.44*19.25 + 109.1
 V_S_year1_new
 ```
 
