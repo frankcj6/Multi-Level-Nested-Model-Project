@@ -26,9 +26,9 @@ Frank Jiang: Project 1
 
 Seeun Jang: Project 1
 
-Lisa Song: Project 2 part A
+Lisa Song: Project 2 
 
-Yuyue Hua: Project 2 part B
+Yuyue Hua: Project 2 
 
 Tong Jin: The mini project
 
