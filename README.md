@@ -1,4 +1,4 @@
-# APSTA-GE 2042 Multi-Level Modeling - Nested and Longitudinal Data
+# Multi-Level Modeling - Nested and Longitudinal Data
 
 ## Final Group Project
 
